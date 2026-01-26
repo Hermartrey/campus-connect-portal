@@ -73,8 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name,
           role: 'student',
           createdAt: new Date().toISOString(),
-          enrollmentStatus: 'pending',
-          tuitionBalance: 5000,
+          enrollmentStatus: 'not_enrolled',
+          tuitionBalance: 0,
           payments: [],
         }
       : {
