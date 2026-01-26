@@ -1,5 +1,7 @@
 export type UserRole = 'student' | 'admin';
 
+export type EnrollmentStatus = 'not_enrolled' | 'pending' | 'approved' | 'rejected';
+
 export interface User {
   id: string;
   email: string;
@@ -8,9 +10,41 @@ export interface User {
   createdAt: string;
 }
 
+export interface EnrollmentFormData {
+  // Step 1: Demographics
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  primarySchool: string;
+  gradeLevel: string;
+  // Guardian Information
+  guardianName: string;
+  guardianRelationship: string;
+  guardianPhone: string;
+  guardianEmail: string;
+  secondaryGuardianName?: string;
+  secondaryGuardianPhone?: string;
+  // Step 2: Documents (store file names for mock)
+  birthCertificate?: string;
+  primarySchoolGrades?: string;
+  additionalDocuments?: string[];
+  // Step 4: Payment
+  paymentMethod: 'online' | 'onsite';
+  paymentAmount?: number;
+  paymentStatus?: 'pending' | 'completed';
+}
+
 export interface Student extends User {
   role: 'student';
-  enrollmentStatus: 'pending' | 'approved' | 'rejected';
+  enrollmentStatus: EnrollmentStatus;
+  enrollmentData?: EnrollmentFormData;
+  enrollmentSubmittedAt?: string;
   gradeLevel?: string;
   tuitionBalance: number;
   payments: Payment[];

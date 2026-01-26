@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Student, Payment } from '@/types/auth';
+import { Student, Payment, EnrollmentFormData } from '@/types/auth';
 
 const USERS_KEY = 'school_users';
 
@@ -18,9 +18,35 @@ export function useStudents() {
 
   const updateStudentStatus = (studentId: string, status: 'pending' | 'approved' | 'rejected') => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => 
-      u.id === studentId ? { ...u, enrollmentStatus: status } : u
-    );
+    const updatedUsers = users.map((u: any) => {
+      if (u.id === studentId) {
+        const updates: any = { enrollmentStatus: status };
+        // Set tuition balance when approved
+        if (status === 'approved') {
+          updates.tuitionBalance = 5000;
+        }
+        return { ...u, ...updates };
+      }
+      return u;
+    });
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    loadStudents();
+  };
+
+  const submitEnrollment = (studentId: string, enrollmentData: EnrollmentFormData) => {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const updatedUsers = users.map((u: any) => {
+      if (u.id === studentId) {
+        return {
+          ...u,
+          enrollmentStatus: 'pending',
+          enrollmentData,
+          enrollmentSubmittedAt: new Date().toISOString(),
+          gradeLevel: enrollmentData.gradeLevel,
+        };
+      }
+      return u;
+    });
     localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
     loadStudents();
   };
@@ -60,6 +86,7 @@ export function useStudents() {
   return {
     students,
     updateStudentStatus,
+    submitEnrollment,
     addPayment,
     getStudentById,
     refreshCurrentStudent,
