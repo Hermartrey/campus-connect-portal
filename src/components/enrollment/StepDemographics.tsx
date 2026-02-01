@@ -19,7 +19,7 @@ const demographicsSchema = z.object({
   address: z.string().min(1, 'Address is required'),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
-  zipCode: z.string().min(5, 'Valid zip code is required'),
+  zipCode: z.string().min(4, 'Valid zip code is required'),
   primarySchool: z.string().min(1, 'Primary school name is required'),
   gradeLevel: z.string().min(1, 'Grade level is required'),
   guardianName: z.string().min(1, 'Guardian name is required'),

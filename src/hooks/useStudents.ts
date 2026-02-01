@@ -51,6 +51,21 @@ export function useStudents() {
     loadStudents();
   };
 
+  const updateStudentData = (studentId: string, data: Partial<EnrollmentFormData>) => {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const updatedUsers = users.map((u: any) => {
+      if (u.id === studentId) {
+        return {
+          ...u,
+          enrollmentData: { ...u.enrollmentData, ...data },
+        };
+      }
+      return u;
+    });
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    loadStudents();
+  };
+
   const addPayment = (studentId: string, payment: Omit<Payment, 'id'>) => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const updatedUsers = users.map((u: any) => {
@@ -87,6 +102,7 @@ export function useStudents() {
     students,
     updateStudentStatus,
     submitEnrollment,
+    updateStudentData,
     addPayment,
     getStudentById,
     refreshCurrentStudent,

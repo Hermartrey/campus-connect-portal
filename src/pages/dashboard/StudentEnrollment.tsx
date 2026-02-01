@@ -20,7 +20,7 @@ export default function StudentEnrollment() {
 
   // Show enrollment wizard if not enrolled yet
   if (studentData?.enrollmentStatus === 'not_enrolled') {
-    return <EnrollmentWizard />;
+    return <EnrollmentWizard onSuccess={() => user?.id && setStudentData(getStudentById(user.id) || null)} />;
   }
 
   const getStatusContent = () => {
@@ -229,9 +229,8 @@ export default function StudentEnrollment() {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">Status</p>
-                    <span className={`text-sm ${
-                      enrollmentData.paymentStatus === 'completed' ? 'text-success' : 'text-warning'
-                    }`}>
+                    <span className={`text-sm ${enrollmentData.paymentStatus === 'completed' ? 'text-success' : 'text-warning'
+                      }`}>
                       {enrollmentData.paymentStatus === 'completed' ? 'Paid' : 'Pending'}
                     </span>
                   </div>

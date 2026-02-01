@@ -5,9 +5,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { CheckCircle, XCircle, Clock, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+import { useNavigate } from 'react-router-dom';
+
 export default function StudentsManagement() {
   const { students, updateStudentStatus } = useStudents();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleStatusUpdate = (studentId: string, status: 'approved' | 'rejected') => {
     updateStudentStatus(studentId, status);
@@ -72,8 +75,14 @@ export default function StudentsManagement() {
                 </TableHeader>
                 <TableBody>
                   {students.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium">{student.name}</TableCell>
+                    <TableRow
+                      key={student.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/dashboard/students/${student.id}`)}
+                    >
+                      <TableCell className="font-medium hover:underline text-primary">
+                        {student.name}
+                      </TableCell>
                       <TableCell>
                         <span className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />

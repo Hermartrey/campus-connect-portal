@@ -18,7 +18,11 @@ const STEPS = [
   { id: 4, title: 'Payment', description: 'Enrollment Fee' },
 ];
 
-export default function EnrollmentWizard() {
+interface EnrollmentWizardProps {
+  onSuccess?: () => void;
+}
+
+export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
   const { user } = useAuth();
   const { submitEnrollment } = useStudents();
   const { toast } = useToast();
@@ -49,12 +53,16 @@ export default function EnrollmentWizard() {
 
   const handleSubmit = () => {
     if (!user?.id) return;
-    
+
     submitEnrollment(user.id, formData as EnrollmentFormData);
     toast({
       title: 'Enrollment Submitted!',
       description: 'Your application has been submitted for review.',
     });
+
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   const goToStep = (step: number) => {
@@ -82,22 +90,20 @@ export default function EnrollmentWizard() {
                 key={step.id}
                 onClick={() => goToStep(step.id)}
                 disabled={step.id > currentStep}
-                className={`flex items-start gap-3 p-3 rounded-lg text-left transition-colors ${
-                  step.id === currentStep
+                className={`flex items-start gap-3 p-3 rounded-lg text-left transition-colors ${step.id === currentStep
                     ? 'bg-primary/10 border-2 border-primary'
                     : step.id < currentStep
-                    ? 'bg-success/10 cursor-pointer hover:bg-success/20'
-                    : 'bg-muted/50 cursor-not-allowed opacity-60'
-                }`}
+                      ? 'bg-success/10 cursor-pointer hover:bg-success/20'
+                      : 'bg-muted/50 cursor-not-allowed opacity-60'
+                  }`}
               >
                 <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    step.id < currentStep
+                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step.id < currentStep
                       ? 'bg-success text-success-foreground'
                       : step.id === currentStep
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
                 >
                   {step.id < currentStep ? (
                     <CheckCircle className="h-5 w-5" />
