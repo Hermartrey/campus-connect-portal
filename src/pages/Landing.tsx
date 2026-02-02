@@ -42,9 +42,11 @@ export default function Landing() {
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">EduPortal Academy</span>
+          <div >
+            <Link className="flex items-center gap-2" to="/">
+              <img src="/ichs-logo.png" alt="ICHS Logo" className="h-8 w-8 object-contain" />
+              <span className="text-xl font-bold text-foreground">ICHS</span>
+            </Link>
           </div>
           <nav className="flex items-center gap-4">
             <Link to="/login">
@@ -58,13 +60,16 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
+      <section className="relative py-20 px-4 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/ichs-image.jpeg)' }}>
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/50"></div>
+
+        <div className="container mx-auto text-center relative z-10">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
             Shape Your Future with
-            <span className="text-primary block mt-2">EduPortal Academy</span>
+            <span className="text-primary block mt-2">Immaculate Conception High School</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8">
             Empowering students with knowledge, skills, and values to succeed in an ever-changing world.
             Join our community of learners today.
           </p>
@@ -75,7 +80,7 @@ export default function Landing() {
               </Button>
             </Link>
             <Link to="/login">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-white/30">
                 Student Portal
               </Button>
             </Link>
