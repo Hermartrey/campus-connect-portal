@@ -16,6 +16,7 @@ import DashboardStudentPayments from "./pages/DashboardStudentPayments";
 import DashboardStudentDetails from "./pages/DashboardStudentDetails";
 import DashboardTuition from "./pages/DashboardTuition";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -30,17 +31,77 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+
+            {/* Dashboard Routes (Shared/Base) */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Admin Routes */}
-            <Route path="/dashboard/students" element={<DashboardStudents />} />
-            <Route path="/dashboard/enrollments" element={<DashboardEnrollments />} />
-            <Route path="/dashboard/payments" element={<DashboardPayments />} />
-            <Route path="/dashboard/tuition" element={<DashboardTuition />} />
-            <Route path="/dashboard/students/:id" element={<DashboardStudentDetails />} />
+            <Route
+              path="/dashboard/students"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DashboardStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/enrollments"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DashboardEnrollments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/payments"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DashboardPayments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/tuition"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DashboardTuition />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/students/:id"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DashboardStudentDetails />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Student Routes */}
-            <Route path="/dashboard/enrollment" element={<DashboardStudentEnrollment />} />
-            <Route path="/dashboard/my-payments" element={<DashboardStudentPayments />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route
+              path="/dashboard/enrollment"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <DashboardStudentEnrollment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/my-payments"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <DashboardStudentPayments />
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
