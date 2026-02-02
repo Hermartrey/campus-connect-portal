@@ -2,7 +2,9 @@ import { useStudents } from '@/hooks/useStudents';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Clock, Mail, Trash2, Edit } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Mail, Trash2, Edit, Search, Filter, RotateCcw, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -24,6 +26,9 @@ export default function StudentsManagement() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('all');
+  const [sexFilter, setSexFilter] = useState('all');
 
   const handleStatusUpdate = (studentId: string, status: 'approved' | 'rejected') => {
     updateStudentStatus(studentId, status);
@@ -66,6 +71,30 @@ export default function StudentsManagement() {
     }
   };
 
+  const filteredStudents = students.filter(student => {
+    const studentName = student.name || '';
+    const studentEmail = student.email || '';
+
+    const matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      studentEmail.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Check grade level - it could be at core object or within enrollmentData
+    const studentGrade = student.gradeLevel || student.enrollmentData?.gradeLevel;
+    const matchesGrade = gradeFilter === 'all' || studentGrade === gradeFilter;
+
+    // Check gender/sex - usually in enrollmentData
+    const studentSex = student.enrollmentData?.gender;
+    const matchesSex = sexFilter === 'all' || studentSex === sexFilter;
+
+    return matchesSearch && matchesGrade && matchesSex;
+  });
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setGradeFilter('all');
+    setSexFilter('all');
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -75,10 +104,62 @@ export default function StudentsManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Students</CardTitle>
-          <CardDescription>
-            {students.length} student{students.length !== 1 ? 's' : ''} registered
-          </CardDescription>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>All Students</CardTitle>
+              <CardDescription>
+                {filteredStudents.length} of {students.length} students matching filters
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2 self-start">
+              <RotateCcw className="h-4 w-4" /> Reset Filters
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search name or email..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <Select value={gradeFilter} onValueChange={setGradeFilter}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Filter by Grade" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Grades</SelectItem>
+                <SelectItem value="grade-7">Grade 7</SelectItem>
+                <SelectItem value="grade-8">Grade 8</SelectItem>
+                <SelectItem value="grade-9">Grade 9</SelectItem>
+                <SelectItem value="grade-10">Grade 10</SelectItem>
+                <SelectItem value="grade-11">Grade 11</SelectItem>
+                <SelectItem value="grade-12">Grade 12</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sexFilter} onValueChange={setSexFilter}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Filter by Sex" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Genders</SelectItem>
+                <SelectItem value="male">Male</SelectItem>
+                <SelectItem value="female">Female</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {students.length === 0 ? (
@@ -90,6 +171,8 @@ export default function StudentsManagement() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Sex</TableHead>
+                    <TableHead>Grade</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Balance</TableHead>
                     <TableHead>Joined</TableHead>
@@ -97,7 +180,7 @@ export default function StudentsManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {students.map((student) => (
+                  {filteredStudents.map((student) => (
                     <TableRow
                       key={student.id}
                       className="cursor-pointer hover:bg-muted/50"
@@ -111,6 +194,12 @@ export default function StudentsManagement() {
                           <Mail className="h-4 w-4 text-muted-foreground" />
                           {student.email}
                         </span>
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {student.enrollmentData?.gender || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {student.gradeLevel || student.enrollmentData?.gradeLevel || '-'}
                       </TableCell>
                       <TableCell>{getStatusBadge(student.enrollmentStatus)}</TableCell>
                       <TableCell>${student.tuitionBalance?.toLocaleString() || 0}</TableCell>
