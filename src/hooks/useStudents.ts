@@ -98,6 +98,13 @@ export function useStudents() {
     return getStudentById(studentId);
   };
 
+  const deleteStudent = (studentId: string) => {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const updatedUsers = users.filter((u: any) => u.id !== studentId);
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    loadStudents();
+  };
+
   return {
     students,
     updateStudentStatus,
@@ -106,6 +113,7 @@ export function useStudents() {
     addPayment,
     getStudentById,
     refreshCurrentStudent,
+    deleteStudent,
     refresh: loadStudents,
   };
 }

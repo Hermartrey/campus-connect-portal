@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useStudents } from '@/hooks/useStudents';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 export default function StudentDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { getStudentById, updateStudentData } = useStudents();
     const [student, setStudent] = useState<Student | undefined>();
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(searchParams.get('edit') === 'true');
     const [formData, setFormData] = useState<Partial<EnrollmentFormData>>({});
     const { toast } = useToast();
 
