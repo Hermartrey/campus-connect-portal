@@ -1,15 +1,94 @@
+import { useState } from 'react';
 import { useStudents } from '@/hooks/useStudents';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DollarSign, TrendingUp, Clock, CheckCircle, Eye, Download, FileText, XCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PaymentsManagement() {
-  const { students } = useStudents();
+  const { students, confirmPayment, cancelPayment } = useStudents();
+  const { toast } = useToast();
+  const [confirmingPayment, setConfirmingPayment] = useState<{
+    studentId: string;
+    paymentId: string;
+    amount: number;
+    studentName: string;
+  } | null>(null);
+  const [viewingReceipt, setViewingReceipt] = useState<{
+    receipt: string;
+    receiptName?: string;
+  } | null>(null);
+  const [cancelingPayment, setCancelingPayment] = useState<{
+    studentId: string;
+    paymentId: string;
+    amount: number;
+    studentName: string;
+  } | null>(null);
+
+  const handleConfirmPayment = () => {
+    if (confirmingPayment) {
+      confirmPayment(confirmingPayment.studentId, confirmingPayment.paymentId);
+      toast({
+        title: 'Payment confirmed',
+        description: `Payment of $${confirmingPayment.amount.toLocaleString()} has been processed.`,
+      });
+      setConfirmingPayment(null);
+    }
+  };
+
+  const handleCancelPayment = () => {
+    if (cancelingPayment) {
+      cancelPayment(cancelingPayment.studentId, cancelingPayment.paymentId);
+      toast({
+        title: 'Payment cancelled',
+        description: `Payment of $${cancelingPayment.amount.toLocaleString()} has been cancelled.`,
+        variant: 'destructive',
+      });
+      setCancelingPayment(null);
+    }
+  };
+
+  const handleDownloadReceipt = (receiptBase64: string, fileName: string) => {
+    // Extract MIME type to ensure correct extension
+    const mimeMatch = receiptBase64.match(/^data:([^;]+);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : '';
+
+    let finalFileName = fileName || 'receipt';
+
+    // Map common MIME types to extensions
+    const extensionMap: Record<string, string> = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/gif': '.gif',
+      'application/pdf': '.pdf',
+    };
+
+    // Add extension if it's missing and we have a MIME type match
+    const currentExtension = finalFileName.includes('.') ? finalFileName.split('.').pop()?.toLowerCase() : '';
+    const suggestedExtension = extensionMap[mimeType];
+
+    if (suggestedExtension && currentExtension !== suggestedExtension.substring(1)) {
+      if (!finalFileName.toLowerCase().endsWith(suggestedExtension)) {
+        finalFileName += suggestedExtension;
+      }
+    }
+
+    const link = document.createElement('a');
+    link.href = receiptBase64;
+    link.download = finalFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Collect all payments from all students
-  const allPayments = students.flatMap(student => 
+  const allPayments = students.flatMap(student =>
     (student.payments || []).map(payment => ({
       ...payment,
+      studentId: student.id,
       studentName: student.name,
       studentEmail: student.email,
     }))
@@ -95,7 +174,9 @@ export default function PaymentsManagement() {
                     <TableHead>Description</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Receipt</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -111,17 +192,77 @@ export default function PaymentsManagement() {
                       <TableCell className="font-medium">${payment.amount.toLocaleString()}</TableCell>
                       <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          payment.status === 'completed'
-                            ? 'bg-success/10 text-success'
-                            : payment.status === 'failed'
+                        {payment.receipt ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground truncate max-w-[100px]">
+                              {payment.receiptName || 'receipt'}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setViewingReceipt({
+                                receipt: payment.receipt,
+                                receiptName: payment.receiptName
+                              })}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleDownloadReceipt(payment.receipt, payment.receiptName || 'receipt')}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${payment.status === 'completed'
+                          ? 'bg-success/10 text-success'
+                          : payment.status === 'cancelled'
                             ? 'bg-destructive/10 text-destructive'
                             : 'bg-warning/10 text-warning'
-                        }`}>
+                          }`}>
                           {payment.status === 'completed' && <CheckCircle className="h-3 w-3" />}
                           {payment.status === 'pending' && <Clock className="h-3 w-3" />}
+                          {payment.status === 'cancelled' && <XCircle className="h-3 w-3" />}
                           {payment.status}
                         </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {payment.status === 'pending' && (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => setCancelingPayment({
+                                studentId: payment.studentId,
+                                paymentId: payment.id,
+                                amount: payment.amount,
+                                studentName: payment.studentName,
+                              })}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => setConfirmingPayment({
+                                studentId: payment.studentId,
+                                paymentId: payment.id,
+                                amount: payment.amount,
+                                studentName: payment.studentName,
+                              })}
+                            >
+                              Confirm
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -131,6 +272,80 @@ export default function PaymentsManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!confirmingPayment} onOpenChange={() => setConfirmingPayment(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to confirm this payment of ${confirmingPayment?.amount.toLocaleString()} from {confirmingPayment?.studentName}?
+              <br /><br />
+              This will mark the payment as completed and deduct the amount from the student's outstanding balance.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmPayment}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancellation Dialog */}
+      <AlertDialog open={!!cancelingPayment} onOpenChange={() => setCancelingPayment(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Payment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this payment of ${cancelingPayment?.amount.toLocaleString()} from {cancelingPayment?.studentName}?
+              <br /><br />
+              This will mark the payment as cancelled. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, Keep it</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelPayment} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Yes, Cancel Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Viewing Receipt Dialog */}
+      <Dialog open={!!viewingReceipt} onOpenChange={() => setViewingReceipt(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Receipt Preview</DialogTitle>
+            <DialogDescription>
+              {viewingReceipt?.receiptName || 'Payment receipt'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center p-4 bg-muted rounded-lg overflow-hidden">
+            {viewingReceipt?.receipt.startsWith('data:image/') ? (
+              <img
+                src={viewingReceipt.receipt}
+                alt="Receipt"
+                className="max-w-full h-auto object-contain shadow-sm"
+              />
+            ) : viewingReceipt?.receipt.startsWith('data:application/pdf') ? (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <FileText className="h-16 w-16 text-primary" />
+                <p className="text-sm font-medium">PDF Document</p>
+                <Button onClick={() => handleDownloadReceipt(viewingReceipt.receipt, viewingReceipt.receiptName || 'receipt.pdf')}>
+                  Download to View
+                </Button>
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">Preview not available for this file type.</p>
+                <Button className="mt-4" onClick={() => handleDownloadReceipt(viewingReceipt?.receipt || '', viewingReceipt?.receiptName || 'receipt')}>
+                  Download anyway
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

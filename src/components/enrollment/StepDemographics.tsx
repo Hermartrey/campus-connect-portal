@@ -22,6 +22,7 @@ const demographicsSchema = z.object({
   zipCode: z.string().min(4, 'Valid zip code is required'),
   primarySchool: z.string().min(1, 'Primary school name is required'),
   gradeLevel: z.string().min(1, 'Grade level is required'),
+  strand: z.string().optional(),
   guardianName: z.string().min(1, 'Guardian name is required'),
   guardianRelationship: z.string().min(1, 'Relationship is required'),
   guardianPhone: z.string().min(10, 'Valid phone number is required'),
@@ -53,6 +54,7 @@ export default function StepDemographics({ data, onUpdate, onNext }: StepDemogra
       zipCode: data.zipCode || '',
       primarySchool: data.primarySchool || '',
       gradeLevel: data.gradeLevel || '',
+      strand: data.strand || '',
       guardianName: data.guardianName || '',
       guardianRelationship: data.guardianRelationship || '',
       guardianPhone: data.guardianPhone || '',
@@ -149,7 +151,7 @@ export default function StepDemographics({ data, onUpdate, onNext }: StepDemogra
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="(555) 123-4567" {...field} />
+                    <Input type="tel" placeholder="09091234567" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -252,6 +254,28 @@ export default function StepDemographics({ data, onUpdate, onNext }: StepDemogra
                       <SelectItem value="grade-10">Grade 10</SelectItem>
                       <SelectItem value="grade-11">Grade 11</SelectItem>
                       <SelectItem value="grade-12">Grade 12</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="strand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Strand (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select strand" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="STEM">STEM</SelectItem>
+                      <SelectItem value="HUMMS">HUMMS</SelectItem>
+                      <SelectItem value="ICT">ICT</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

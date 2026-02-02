@@ -14,6 +14,7 @@ import DashboardPayments from "./pages/DashboardPayments";
 import DashboardStudentEnrollment from "./pages/DashboardStudentEnrollment";
 import DashboardStudentPayments from "./pages/DashboardStudentPayments";
 import DashboardStudentDetails from "./pages/DashboardStudentDetails";
+import DashboardTuition from "./pages/DashboardTuition";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/dashboard/students" element={<DashboardStudents />} />
             <Route path="/dashboard/enrollments" element={<DashboardEnrollments />} />
             <Route path="/dashboard/payments" element={<DashboardPayments />} />
+            <Route path="/dashboard/tuition" element={<DashboardTuition />} />
             <Route path="/dashboard/students/:id" element={<DashboardStudentDetails />} />
             {/* Student Routes */}
             <Route path="/dashboard/enrollment" element={<DashboardStudentEnrollment />} />

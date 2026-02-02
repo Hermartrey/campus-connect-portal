@@ -23,6 +23,7 @@ export interface EnrollmentFormData {
   phone: string;
   primarySchool: string;
   gradeLevel: string;
+  strand?: string;
   // Guardian Information
   guardianName: string;
   guardianRelationship: string;
@@ -58,8 +59,10 @@ export interface Payment {
   id: string;
   amount: number;
   date: string;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
   description: string;
+  receipt?: string; // Base64 data URL of receipt document
+  receiptName?: string; // Original file name
 }
 
 export interface EnrollmentForm {

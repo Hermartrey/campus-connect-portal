@@ -2,15 +2,16 @@ import { ReactNode } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { 
-  GraduationCap, 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
-  CreditCard, 
+import {
+  GraduationCap,
+  LayoutDashboard,
+  Users,
+  FileText,
+  CreditCard,
   LogOut,
   Menu,
-  X
+  X,
+  DollarSign
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -34,29 +35,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navItems = isAdmin
     ? [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: Users, label: 'Students', path: '/dashboard/students' },
-        { icon: FileText, label: 'Enrollments', path: '/dashboard/enrollments' },
-        { icon: CreditCard, label: 'Payments', path: '/dashboard/payments' },
-      ]
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+      { icon: Users, label: 'Students', path: '/dashboard/students' },
+      { icon: FileText, label: 'Enrollments', path: '/dashboard/enrollments' },
+      { icon: CreditCard, label: 'Payments', path: '/dashboard/payments' },
+      { icon: DollarSign, label: 'Tuition', path: '/dashboard/tuition' },
+    ]
     : [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: FileText, label: 'Enrollment', path: '/dashboard/enrollment' },
-        { icon: CreditCard, label: 'Payments', path: '/dashboard/my-payments' },
-      ];
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+      { icon: FileText, label: 'Enrollment', path: '/dashboard/enrollment' },
+      { icon: CreditCard, label: 'Payments', path: '/dashboard/my-payments' },
+    ];
 
   return (
     <div className="min-h-screen flex bg-background">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={cn(
           "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-sidebar text-sidebar-foreground transform transition-transform duration-200 lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -82,8 +84,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                    isActive 
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "hover:bg-sidebar-accent/50"
                   )}
                 >
@@ -100,8 +102,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <p className="font-medium truncate">{user?.name}</p>
               <p className="text-sm text-sidebar-foreground/70 capitalize">{user?.role}</p>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
               onClick={handleLogout}
             >

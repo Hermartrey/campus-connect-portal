@@ -75,7 +75,7 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-foreground">Student Enrollment</h2>
-        <p className="text-muted-foreground">Complete the form below to enroll at EduPortal Academy</p>
+        <p className="text-muted-foreground">Complete the form below to enroll at Immaculate Conception High School</p>
       </div>
 
       {/* Progress Steps */}
@@ -91,18 +91,18 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
                 onClick={() => goToStep(step.id)}
                 disabled={step.id > currentStep}
                 className={`flex items-start gap-3 p-3 rounded-lg text-left transition-colors ${step.id === currentStep
-                    ? 'bg-primary/10 border-2 border-primary'
-                    : step.id < currentStep
-                      ? 'bg-success/10 cursor-pointer hover:bg-success/20'
-                      : 'bg-muted/50 cursor-not-allowed opacity-60'
+                  ? 'bg-primary/10 border-2 border-primary'
+                  : step.id < currentStep
+                    ? 'bg-success/10 cursor-pointer hover:bg-success/20'
+                    : 'bg-muted/50 cursor-not-allowed opacity-60'
                   }`}
               >
                 <div
                   className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step.id < currentStep
-                      ? 'bg-success text-success-foreground'
-                      : step.id === currentStep
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
+                    ? 'bg-success text-success-foreground'
+                    : step.id === currentStep
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
                     }`}
                 >
                   {step.id < currentStep ? (

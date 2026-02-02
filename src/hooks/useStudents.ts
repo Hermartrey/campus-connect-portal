@@ -21,9 +21,26 @@ export function useStudents() {
     const updatedUsers = users.map((u: any) => {
       if (u.id === studentId) {
         const updates: any = { enrollmentStatus: status };
-        // Set tuition balance when approved
+        // Set tuition balance when approved based on grade level
         if (status === 'approved') {
-          updates.tuitionBalance = 5000;
+          // Get tuition config from localStorage
+          const tuitionConfigStr = localStorage.getItem('tuition_config');
+          let tuitionAmount = 5000; // default fallback
+
+          if (tuitionConfigStr) {
+            try {
+              const tuitionConfig = JSON.parse(tuitionConfigStr);
+              const gradeLevel = u.enrollmentData?.gradeLevel || u.gradeLevel;
+              const rate = tuitionConfig.rates?.find((r: any) => r.gradeLevel === gradeLevel);
+              if (rate) {
+                tuitionAmount = rate.amount;
+              }
+            } catch (e) {
+              console.error('Error parsing tuition config:', e);
+            }
+          }
+
+          updates.tuitionBalance = tuitionAmount;
         }
         return { ...u, ...updates };
       }
@@ -98,6 +115,67 @@ export function useStudents() {
     return getStudentById(studentId);
   };
 
+  const confirmPayment = (studentId: string, paymentId: string) => {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const updatedUsers = users.map((u: any) => {
+      if (u.id === studentId) {
+        // Find the payment to confirm
+        const paymentToConfirm = u.payments?.find((p: Payment) => p.id === paymentId);
+
+        if (paymentToConfirm && paymentToConfirm.status === 'pending') {
+          // Update payment status
+          const updatedPayments = u.payments.map((p: Payment) => {
+            if (p.id === paymentId) {
+              return { ...p, status: 'completed' as const };
+            }
+            return p;
+          });
+
+          // Deduct balance
+          const newBalance = Math.max(0, u.tuitionBalance - paymentToConfirm.amount);
+
+          return {
+            ...u,
+            payments: updatedPayments,
+            tuitionBalance: newBalance,
+          };
+        }
+      }
+      return u;
+    });
+
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    loadStudents();
+  };
+  const cancelPayment = (studentId: string, paymentId: string) => {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const updatedUsers = users.map((u: any) => {
+      if (u.id === studentId) {
+        // Find the payment to cancel
+        const paymentToCancel = u.payments?.find((p: Payment) => p.id === paymentId);
+
+        if (paymentToCancel && paymentToCancel.status === 'pending') {
+          // Update payment status
+          const updatedPayments = u.payments.map((p: Payment) => {
+            if (p.id === paymentId) {
+              return { ...p, status: 'cancelled' as const };
+            }
+            return p;
+          });
+
+          return {
+            ...u,
+            payments: updatedPayments,
+          };
+        }
+      }
+      return u;
+    });
+
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    loadStudents();
+  };
+
   const deleteStudent = (studentId: string) => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const updatedUsers = users.filter((u: any) => u.id !== studentId);
@@ -114,6 +192,8 @@ export function useStudents() {
     getStudentById,
     refreshCurrentStudent,
     deleteStudent,
+    confirmPayment,
+    cancelPayment,
     refresh: loadStudents,
   };
 }

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CreditCard, DollarSign, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { CreditCard, DollarSign, CheckCircle, Clock, Loader2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const paymentDescriptions = [
@@ -22,23 +22,55 @@ const paymentDescriptions = [
 
 export default function StudentPayments() {
   const { user } = useAuth();
-  const { getStudentById, addPayment, refresh } = useStudents();
+  const { getStudentById, addPayment, refresh, students } = useStudents();
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [receipt, setReceipt] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
+  const convertToJpeg = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Load student data on mount and when students array changes
   useEffect(() => {
     if (user?.id) {
       const data = getStudentById(user.id);
       if (data) setStudentData(data);
     }
-  }, [user?.id, getStudentById]);
+  }, [user?.id, students, getStudentById]);
+
+  // Refresh data when component mounts
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const paymentAmount = parseFloat(amount);
     if (isNaN(paymentAmount) || paymentAmount <= 0) {
       toast({
@@ -69,31 +101,59 @@ export default function StudentPayments() {
 
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      let receiptBase64: string | undefined = undefined;
 
-    if (user?.id) {
-      addPayment(user.id, {
-        amount: paymentAmount,
-        date: new Date().toISOString(),
-        status: 'completed',
-        description,
-      });
+      if (receipt) {
+        if (receipt.type.startsWith('image/')) {
+          receiptBase64 = await convertToJpeg(receipt);
+        } else {
+          receiptBase64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(receipt);
+          });
+        }
+      }
 
-      refresh();
-      const updatedData = getStudentById(user.id);
-      if (updatedData) setStudentData(updatedData);
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
+      if (user?.id) {
+        addPayment(user.id, {
+          amount: paymentAmount,
+          date: new Date().toISOString(),
+          status: 'pending',
+          description,
+          receipt: receiptBase64,
+          receiptName: receipt?.type.startsWith('image/')
+            ? (receipt.name.split('.')[0] + '.jpg')
+            : receipt?.name,
+        });
+
+        refresh();
+        const updatedData = getStudentById(user.id);
+        if (updatedData) setStudentData(updatedData);
+
+        toast({
+          title: 'Payment submitted!',
+          description: `Your payment of $${paymentAmount.toLocaleString()} is pending admin confirmation.`,
+        });
+
+        setAmount('');
+        setDescription('');
+        setReceipt(null);
+      }
+    } catch (error) {
       toast({
-        title: 'Payment successful!',
-        description: `Your payment of $${paymentAmount.toLocaleString()} has been processed.`,
+        title: 'Error',
+        description: 'Failed to process receipt file.',
+        variant: 'destructive',
       });
-
-      setAmount('');
-      setDescription('');
+    } finally {
+      setIsProcessing(false);
     }
-
-    setIsProcessing(false);
   };
 
   return (
@@ -174,6 +234,21 @@ export default function StudentPayments() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="receipt">Receipt (Optional)</Label>
+                  <Input
+                    id="receipt"
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => setReceipt(e.target.files?.[0] || null)}
+                    className="cursor-pointer"
+                  />
+                  {receipt && (
+                    <p className="text-xs text-muted-foreground">
+                      Selected: {receipt.name}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
@@ -216,13 +291,16 @@ export default function StudentPayments() {
                       <TableCell>${payment.amount.toLocaleString()}</TableCell>
                       <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          payment.status === 'completed'
-                            ? 'bg-success/10 text-success'
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${payment.status === 'completed'
+                          ? 'bg-success/10 text-success'
+                          : payment.status === 'cancelled'
+                            ? 'bg-destructive/10 text-destructive'
                             : 'bg-warning/10 text-warning'
-                        }`}>
+                          }`}>
                           {payment.status === 'completed' ? (
                             <CheckCircle className="h-3 w-3" />
+                          ) : payment.status === 'cancelled' ? (
+                            <XCircle className="h-3 w-3" />
                           ) : (
                             <Clock className="h-3 w-3" />
                           )}
