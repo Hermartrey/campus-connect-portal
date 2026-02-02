@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNotifications } from '@/hooks/useNotifications';
 import StepDemographics from './StepDemographics';
 import StepDocuments from './StepDocuments';
 import StepReview from './StepReview';
@@ -26,6 +27,7 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
   const { user } = useAuth();
   const { submitEnrollment } = useStudents();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<EnrollmentFormData>>({
     firstName: user?.name?.split(' ')[0] || '',
@@ -55,6 +57,13 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
     if (!user?.id) return;
 
     submitEnrollment(user.id, formData as EnrollmentFormData);
+    addNotification({
+      userId: 'admin-1',
+      title: 'New Enrollment Application',
+      message: `${formData.firstName} ${formData.lastName} has submitted an enrollment application for grade ${formData.gradeLevel}.`,
+      type: 'info',
+      link: '/dashboard/enrollments',
+    });
     toast({
       title: 'Enrollment Submitted!',
       description: 'Your application has been submitted for review.',

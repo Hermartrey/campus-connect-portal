@@ -80,3 +80,14 @@ export interface EnrollmentForm {
   state: string;
   zipCode: string;
 }
+
+export interface Notification {
+  id: string;
+  userId: string; // Recipient
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
+  createdAt: string;
+  link?: string;
+}

@@ -7,10 +7,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DollarSign, TrendingUp, Clock, CheckCircle, Eye, Download, FileText, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function PaymentsManagement() {
   const { students, confirmPayment, cancelPayment } = useStudents();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
   const [confirmingPayment, setConfirmingPayment] = useState<{
     studentId: string;
     paymentId: string;
@@ -31,6 +33,12 @@ export default function PaymentsManagement() {
   const handleConfirmPayment = () => {
     if (confirmingPayment) {
       confirmPayment(confirmingPayment.studentId, confirmingPayment.paymentId);
+      addNotification({
+        userId: confirmingPayment.studentId,
+        title: 'Payment Confirmed',
+        message: `Your payment of $${confirmingPayment.amount.toLocaleString()} has been confirmed.`,
+        type: 'success',
+      });
       toast({
         title: 'Payment confirmed',
         description: `Payment of $${confirmingPayment.amount.toLocaleString()} has been processed.`,
@@ -42,6 +50,12 @@ export default function PaymentsManagement() {
   const handleCancelPayment = () => {
     if (cancelingPayment) {
       cancelPayment(cancelingPayment.studentId, cancelingPayment.paymentId);
+      addNotification({
+        userId: cancelingPayment.studentId,
+        title: 'Payment Cancelled',
+        message: `Your payment of $${cancelingPayment.amount.toLocaleString()} has been cancelled by the admin.`,
+        type: 'error',
+      });
       toast({
         title: 'Payment cancelled',
         description: `Payment of $${cancelingPayment.amount.toLocaleString()} has been cancelled.`,

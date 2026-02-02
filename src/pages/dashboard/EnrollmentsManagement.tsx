@@ -5,16 +5,25 @@ import { CheckCircle, XCircle, Clock, User, FileText, CreditCard, ChevronDown, C
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Student } from '@/types/auth';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function EnrollmentsManagement() {
   const { students, updateStudentStatus } = useStudents();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const pendingStudents = students.filter(s => s.enrollmentStatus === 'pending' && s.enrollmentData);
 
   const handleStatusUpdate = (studentId: string, status: 'approved' | 'rejected') => {
     updateStudentStatus(studentId, status);
+    addNotification({
+      userId: studentId,
+      title: `Enrollment ${status === 'approved' ? 'Approved' : 'Returned/Rejected'}`,
+      message: `Your enrollment application has been ${status === 'approved' ? 'approved! You can now proceed.' : 'returned for revisions or rejected.'}`,
+      type: status === 'approved' ? 'success' : 'warning',
+      link: '/dashboard/enrollment',
+    });
     toast({
       title: `Enrollment ${status}`,
       description: `The enrollment has been ${status} successfully.`,

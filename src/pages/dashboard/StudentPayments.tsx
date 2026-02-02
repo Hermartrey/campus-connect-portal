@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CreditCard, DollarSign, CheckCircle, Clock, Loader2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const paymentDescriptions = [
   'Tuition Payment',
@@ -29,6 +30,7 @@ export default function StudentPayments() {
   const [receipt, setReceipt] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
 
   const convertToJpeg = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -130,6 +132,14 @@ export default function StudentPayments() {
           receiptName: receipt?.type.startsWith('image/')
             ? (receipt.name.split('.')[0] + '.jpg')
             : receipt?.name,
+        });
+
+        addNotification({
+          userId: 'admin-1',
+          title: 'New Payment Submitted',
+          message: `${user.name} submitted a payment of $${paymentAmount.toLocaleString()} for ${description}.`,
+          type: 'info',
+          link: '/dashboard/payments',
         });
 
         refresh();
