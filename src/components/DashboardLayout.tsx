@@ -75,8 +75,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo */}
           <div className="p-6 border-b border-sidebar-border">
             <Link to="/" className="flex items-center gap-2">
-              <GraduationCap className="h-8 w-8 text-sidebar-primary" />
-              <span className="text-lg font-bold">EduPortal</span>
+              <img src="/ichs-logo.png" alt="ICHS Logo" className="h-8 w-8 object-contain" />
+              <span className="text-lg font-bold">ICHS</span>
             </Link>
           </div>
 
