@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EnrollmentFormData } from '@/types/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { CreditCard, Building2, ArrowLeft, Send, CheckCircle, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useTuition } from '@/hooks/useTuition';
 
 interface StepPaymentProps {
   data: Partial<EnrollmentFormData>;
@@ -15,39 +16,87 @@ interface StepPaymentProps {
   onSubmit: () => void;
 }
 
-const ENROLLMENT_FEE = 500;
-
 export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPaymentProps) {
+  const { getTuitionForGrade } = useTuition();
+  const gradeTuition = getTuitionForGrade(data.gradeLevel || '');
+
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'onsite'>(data.paymentMethod || 'onsite');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [cardName, setCardName] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState<string>(data.paymentAmount?.toString() || '500');
+  const [receipt, setReceipt] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handlePaymentMethodChange = (value: 'online' | 'onsite') => {
     setPaymentMethod(value);
     onUpdate({ paymentMethod: value });
   };
 
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const validateAmount = (value: string): boolean => {
+    const amount = parseFloat(value);
+    if (isNaN(amount)) {
+      setError('Please enter a valid amount');
+      return false;
+    }
+    if (amount < 500) {
+      setError('Minimum upfront payment is $500');
+      return false;
+    }
+    if (amount > gradeTuition) {
+      setError(`Maximum payment cannot exceed total tuition of $${gradeTuition.toLocaleString()}`);
+      return false;
+    }
+    setError(null);
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateAmount(paymentAmount)) return;
+
+    if (paymentMethod === 'online' && !receipt) {
+      setError('Please upload a proof of payment screenshot');
+      return;
+    }
+
     setIsProcessing(true);
-    
+
+    let receiptBase64 = '';
+    if (receipt) {
+      try {
+        receiptBase64 = await convertToBase64(receipt);
+      } catch (error) {
+        console.error('Error converting file to base64:', error);
+      }
+    }
+
+    const amount = parseFloat(paymentAmount);
+
     // Simulate payment processing for online payment
     if (paymentMethod === 'online') {
       await new Promise(resolve => setTimeout(resolve, 1500));
       onUpdate({
         paymentMethod: 'online',
-        paymentAmount: ENROLLMENT_FEE,
+        paymentAmount: amount,
         paymentStatus: 'completed',
+        paymentReceipt: receiptBase64,
+        paymentReceiptName: receipt?.name,
       });
     } else {
       onUpdate({
         paymentMethod: 'onsite',
+        paymentAmount: amount,
         paymentStatus: 'pending',
       });
     }
-    
+
     onSubmit();
     setIsProcessing(false);
   };
@@ -58,22 +107,46 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Enrollment Fee Payment
+            Upfront Payment
           </CardTitle>
           <CardDescription>
-            Choose your preferred payment method for the enrollment fee
+            Enter the amount you wish to pay upfront for your enrollment
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Fee Summary */}
-          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Enrollment Fee</span>
-              <span className="text-2xl font-bold">${ENROLLMENT_FEE.toLocaleString()}</span>
+              <span className="text-muted-foreground">Total Tuition ({data.gradeLevel})</span>
+              <span className="text-xl font-semibold">${gradeTuition.toLocaleString()}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              This fee covers application processing and enrollment registration
-            </p>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentAmount">Upfront Payment Amount ($)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <Input
+                  id="paymentAmount"
+                  type="number"
+                  min="500"
+                  max={gradeTuition}
+                  value={paymentAmount}
+                  onChange={(e) => {
+                    setPaymentAmount(e.target.value);
+                    validateAmount(e.target.value);
+                  }}
+                  className={`pl-7 ${error ? 'border-destructive' : ''}`}
+                  placeholder="500.00"
+                />
+              </div>
+              {error ? (
+                <p className="text-xs text-destructive font-medium">{error}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Minimum: $500 | Maximum: ${gradeTuition.toLocaleString()}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Payment Method Selection */}
@@ -85,27 +158,25 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
               className="space-y-3"
             >
               <div
-                className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${
-                  paymentMethod === 'online' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                }`}
+                className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'online' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                  }`}
                 onClick={() => handlePaymentMethodChange('online')}
               >
                 <RadioGroupItem value="online" id="online" className="mt-1" />
                 <div className="flex-1">
                   <Label htmlFor="online" className="flex items-center gap-2 cursor-pointer">
                     <CreditCard className="h-5 w-5" />
-                    Pay Online Now
+                    Pay Online Now (GCash)
                   </Label>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Pay securely with credit or debit card
+                    Pay securely via GCash
                   </p>
                 </div>
               </div>
 
               <div
-                className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${
-                  paymentMethod === 'onsite' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                }`}
+                className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'onsite' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                  }`}
                 onClick={() => handlePaymentMethodChange('onsite')}
               >
                 <RadioGroupItem value="onsite" id="onsite" className="mt-1" />
@@ -122,55 +193,42 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
             </RadioGroup>
           </div>
 
-          {/* Online Payment Form */}
+          {/* GCash Payment Form */}
           {paymentMethod === 'online' && (
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="font-medium">Card Details</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="cardName">Cardholder Name</Label>
-                  <Input
-                    id="cardName"
-                    placeholder="John Doe"
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                  />
+              <h4 className="font-medium">GCash Details</h4>
+              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">GCash Number:</span>
+                  <span className="font-bold">09123456789</span>
                 </div>
-                <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input
-                    id="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <Input
-                    id="expiryDate"
-                    placeholder="MM/YY"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input
-                    id="cvv"
-                    type="password"
-                    placeholder="123"
-                    value={cvv}
-                    onChange={(e) => setCvv(e.target.value)}
-                  />
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">GCash Name:</span>
+                  <span className="font-bold">Immaculate Conception High School</span>
                 </div>
               </div>
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  This is a demo. No actual payment will be processed.
-                </AlertDescription>
-              </Alert>
+
+              <div className="space-y-2">
+                <Label htmlFor="receipt">Upload Receipt / Screenshot</Label>
+                <Input
+                  id="receipt"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => setReceipt(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
+                  required={paymentMethod === 'online'}
+                />
+                {receipt && (
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Selected: {receipt.name}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Please upload a proof of payment to proceed with your enrollment application.
+                </p>
+              </div>
+
+
             </div>
           )}
 
@@ -213,11 +271,11 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
           <ArrowLeft className="h-4 w-4" />
           Previous
         </Button>
-        <Button 
-          type="button" 
-          size="lg" 
-          onClick={handleSubmit} 
-          disabled={isProcessing}
+        <Button
+          type="button"
+          size="lg"
+          onClick={handleSubmit}
+          disabled={isProcessing || !!error}
           className="gap-2"
         >
           {isProcessing ? (
@@ -236,3 +294,4 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
     </div>
   );
 }
+

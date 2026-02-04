@@ -224,8 +224,13 @@ export default function StudentEnrollment() {
                   <div>
                     <p className="font-medium">Payment Method</p>
                     <p className="text-sm text-muted-foreground capitalize">
-                      {enrollmentData.paymentMethod === 'online' ? 'Online Payment' : 'Pay at School Office'}
+                      {enrollmentData.paymentMethod === 'online' ? 'Online Payment (GCash)' : 'Pay at School Office'}
                     </p>
+                    {enrollmentData.paymentMethod === 'online' && enrollmentData.paymentReceipt && (
+                      <p className="text-xs text-primary font-medium mt-1">
+                        Receipt: {enrollmentData.paymentReceiptName || 'Uploaded'}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="font-medium">Status</p>

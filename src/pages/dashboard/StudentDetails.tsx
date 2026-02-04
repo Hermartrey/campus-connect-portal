@@ -13,10 +13,11 @@ export default function StudentDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { getStudentById, updateStudentData } = useStudents();
+    const { getStudentById, updateStudentData, updateTuitionBalance } = useStudents();
     const [student, setStudent] = useState<Student | undefined>();
     const [isEditing, setIsEditing] = useState(searchParams.get('edit') === 'true');
     const [formData, setFormData] = useState<Partial<EnrollmentFormData>>({});
+    const [editableBalance, setEditableBalance] = useState<string>('0');
     const { toast } = useToast();
 
     useEffect(() => {
@@ -26,19 +27,28 @@ export default function StudentDetails() {
             if (data?.enrollmentData) {
                 setFormData(data.enrollmentData);
             }
+            if (data) {
+                setEditableBalance(data.tuitionBalance?.toString() || '0');
+            }
         }
     }, [id, getStudentById]);
 
     const handleSave = () => {
         if (id && formData) {
             updateStudentData(id, formData);
+
+            const balance = parseFloat(editableBalance);
+            if (!isNaN(balance)) {
+                updateTuitionBalance(id, balance);
+            }
+
             // Re-fetch to confirm update
             const updated = getStudentById(id);
             setStudent(updated);
             setIsEditing(false);
             toast({
                 title: "Student Updated",
-                description: "Student information has been successfully updated.",
+                description: "Student information and balance have been successfully updated.",
             });
         }
     };
@@ -47,6 +57,9 @@ export default function StudentDetails() {
         setIsEditing(false);
         if (student?.enrollmentData) {
             setFormData(student.enrollmentData);
+        }
+        if (student) {
+            setEditableBalance(student.tuitionBalance?.toString() || '0');
         }
     };
 
@@ -306,9 +319,21 @@ export default function StudentDetails() {
                         <CardContent className="space-y-4">
                             <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                                 <p className="text-sm text-muted-foreground">Current Balance</p>
-                                <p className="text-2xl font-bold text-primary">
-                                    ${student.tuitionBalance?.toLocaleString() || '0.00'}
-                                </p>
+                                {isEditing ? (
+                                    <div className="mt-1 relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
+                                        <Input
+                                            type="number"
+                                            value={editableBalance}
+                                            onChange={(e) => setEditableBalance(e.target.value)}
+                                            className="pl-7 h-9 font-bold text-lg"
+                                        />
+                                    </div>
+                                ) : (
+                                    <p className="text-2xl font-bold text-primary">
+                                        ${student.tuitionBalance?.toLocaleString() || '0.00'}
+                                    </p>
+                                )}
                             </div>
 
                             <div>

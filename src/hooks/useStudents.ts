@@ -40,7 +40,9 @@ export function useStudents() {
             }
           }
 
-          updates.tuitionBalance = tuitionAmount;
+          // Deduct upfront payment
+          const upfrontPayment = u.enrollmentData?.paymentAmount || 0;
+          updates.tuitionBalance = Math.max(0, tuitionAmount - upfrontPayment);
         }
         return { ...u, ...updates };
       }
@@ -183,11 +185,24 @@ export function useStudents() {
     loadStudents();
   };
 
+  const updateTuitionBalance = (studentId: string, balance: number) => {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const updatedUsers = users.map((u: any) => {
+      if (u.id === studentId) {
+        return { ...u, tuitionBalance: balance };
+      }
+      return u;
+    });
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    loadStudents();
+  };
+
   return {
     students,
     updateStudentStatus,
     submitEnrollment,
     updateStudentData,
+    updateTuitionBalance,
     addPayment,
     getStudentById,
     refreshCurrentStudent,

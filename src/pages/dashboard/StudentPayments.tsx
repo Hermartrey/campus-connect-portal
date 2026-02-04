@@ -260,11 +260,7 @@ export default function StudentPayments() {
                   )}
                 </div>
               </div>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Note:</strong> This is a demo payment system. No actual charges will be made.
-                </p>
-              </div>
+
               <Button type="submit" className="w-full sm:w-auto" disabled={isProcessing}>
                 {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isProcessing ? 'Processing...' : 'Submit Payment'}

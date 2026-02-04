@@ -39,6 +39,8 @@ export interface EnrollmentFormData {
   paymentMethod: 'online' | 'onsite';
   paymentAmount?: number;
   paymentStatus?: 'pending' | 'completed';
+  paymentReceipt?: string; // Base64 data URL
+  paymentReceiptName?: string; // Original file name
 }
 
 export interface Student extends User {
