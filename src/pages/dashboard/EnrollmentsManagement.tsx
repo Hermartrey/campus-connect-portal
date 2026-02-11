@@ -14,9 +14,9 @@ export default function EnrollmentsManagement() {
   const { toast } = useToast();
   const { addNotification } = useNotifications();
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [viewingReceipt, setViewingReceipt] = useState<{
-    receipt: string;
-    receiptName?: string;
+  const [viewingDocument, setViewingDocument] = useState<{
+    url: string;
+    name?: string;
   } | null>(null);
   const [pendingAction, setPendingAction] = useState<{
     student: Student;
@@ -94,12 +94,64 @@ export default function EnrollmentsManagement() {
             <p className="font-medium">{data.address}, {data.city}, {data.state} {data.zipCode}</p>
           </div>
         </div>
-        <div className="flex flex-col md:flex-row md:items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">Documents:</span>
-            <span className="text-muted-foreground">{data.birthCertificate}, {data.primarySchoolGrades}</span>
+        <div className="md:col-span-3 space-y-2 mt-2">
+          <p className="font-medium flex items-center gap-2 text-sm">
+            <FileText className="h-4 w-4" /> Documents
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Birth Certificate */}
+            {data.birthCertificate && (
+              <div className="flex items-center justify-between p-2 border rounded bg-muted/20">
+                <span className="text-sm truncate mr-2">{data.birthCertificate} (Birth Cert)</span>
+                <div className="flex gap-1">
+                  {data.birthCertificateData ? (
+                    <>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setViewingDocument({ url: data.birthCertificateData!, name: data.birthCertificate })}>
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDownloadReceipt(data.birthCertificateData!, data.birthCertificate || 'document')}>
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </>
+                  ) : <span className="text-xs text-muted-foreground italic">No preview</span>}
+                </div>
+              </div>
+            )}
+            {/* Grades */}
+            {data.primarySchoolGrades && (
+              <div className="flex items-center justify-between p-2 border rounded bg-muted/20">
+                <span className="text-sm truncate mr-2">{data.primarySchoolGrades} (Grades)</span>
+                <div className="flex gap-1">
+                  {data.primarySchoolGradesData ? (
+                    <>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setViewingDocument({ url: data.primarySchoolGradesData!, name: data.primarySchoolGrades })}>
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDownloadReceipt(data.primarySchoolGradesData!, data.primarySchoolGrades || 'document')}>
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </>
+                  ) : <span className="text-xs text-muted-foreground italic">No preview</span>}
+                </div>
+              </div>
+            )}
+            {/* Additional Docs */}
+            {data.additionalDocumentsData?.map((doc, idx) => (
+              <div key={idx} className="flex items-center justify-between p-2 border rounded bg-muted/20">
+                <span className="text-sm truncate mr-2">{doc.name} (Other)</span>
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setViewingDocument({ url: doc.data, name: doc.name })}>
+                    <Eye className="h-3 w-3" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDownloadReceipt(doc.data, doc.name)}>
+                    <Download className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center gap-4 text-sm pt-2 border-t">
           <div className="flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium">Payment:</span>
@@ -118,9 +170,9 @@ export default function EnrollmentsManagement() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
-                onClick={() => setViewingReceipt({
-                  receipt: data.paymentReceipt!,
-                  receiptName: data.paymentReceiptName
+                onClick={() => setViewingDocument({
+                  url: data.paymentReceipt!,
+                  name: data.paymentReceiptName
                 })}
               >
                 <Eye className="h-4 w-4" />
@@ -219,6 +271,20 @@ export default function EnrollmentsManagement() {
                         {expandedId === student.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         {expandedId === student.id ? 'Hide Details' : 'View Details'}
                       </Button>
+                      {student.enrollmentData?.paymentReceipt && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-primary hover:bg-primary/10"
+                          onClick={() => setViewingDocument({
+                            url: student.enrollmentData!.paymentReceipt!,
+                            name: student.enrollmentData!.paymentReceiptName
+                          })}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Receipt
+                        </Button>
+                      )}
                       <Button variant="outline" className="text-success hover:bg-success/10" onClick={() => setPendingAction({ student, status: 'approved' })}>
                         <CheckCircle className="h-4 w-4 mr-2" />Approve
                       </Button>
@@ -311,34 +377,34 @@ export default function EnrollmentsManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Viewing Receipt Dialog */}
-      <Dialog open={!!viewingReceipt} onOpenChange={() => setViewingReceipt(null)}>
+      {/* Viewing Document Dialog */}
+      <Dialog open={!!viewingDocument} onOpenChange={(open) => !open && setViewingDocument(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Receipt Preview</DialogTitle>
+            <DialogTitle>Document Preview</DialogTitle>
             <DialogDescription>
-              {viewingReceipt?.receiptName || 'Payment receipt'}
+              {viewingDocument?.name || 'Document'}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center p-4 bg-muted rounded-lg overflow-hidden">
-            {viewingReceipt?.receipt.startsWith('data:image/') ? (
+            {viewingDocument?.url.startsWith('data:image/') ? (
               <img
-                src={viewingReceipt.receipt}
-                alt="Receipt"
+                src={viewingDocument.url}
+                alt="Document"
                 className="max-w-full h-auto object-contain shadow-sm"
               />
-            ) : viewingReceipt?.receipt.startsWith('data:application/pdf') ? (
+            ) : viewingDocument?.url.startsWith('data:application/pdf') ? (
               <div className="flex flex-col items-center gap-4 py-8">
                 <FileText className="h-16 w-16 text-primary" />
                 <p className="text-sm font-medium">PDF Document</p>
-                <Button onClick={() => handleDownloadReceipt(viewingReceipt.receipt, viewingReceipt.receiptName || 'receipt.pdf')}>
+                <Button onClick={() => handleDownloadReceipt(viewingDocument.url, viewingDocument.name || 'document.pdf')}>
                   Download to View
                 </Button>
               </div>
             ) : (
               <div className="py-8 text-center">
                 <p className="text-sm text-muted-foreground">Preview not available for this file type.</p>
-                <Button className="mt-4" onClick={() => handleDownloadReceipt(viewingReceipt?.receipt || '', viewingReceipt?.receiptName || 'receipt')}>
+                <Button className="mt-4" onClick={() => handleDownloadReceipt(viewingDocument?.url || '', viewingDocument?.name || 'document')}>
                   Download anyway
                 </Button>
               </div>

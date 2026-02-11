@@ -195,7 +195,12 @@ export default function StudentPayments() {
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-success" />
               <span className="text-3xl font-bold">
-                ${studentData?.payments?.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0).toLocaleString() || 0}
+                ${studentData?.payments?.filter(p => p.status === 'completed').reduce((sum, p) => {
+                  if (p.type === 'adjustment') {
+                    return p.adjustmentType === 'debit' ? sum - p.amount : sum + p.amount;
+                  }
+                  return sum + p.amount;
+                }, 0).toLocaleString() || 0}
               </span>
             </div>
           </CardContent>
@@ -293,24 +298,36 @@ export default function StudentPayments() {
                 <TableBody>
                   {studentData.payments.slice().reverse().map((payment) => (
                     <TableRow key={payment.id}>
-                      <TableCell className="font-medium">{payment.description}</TableCell>
+                      <TableCell className="font-medium">
+                        {payment.description}
+                        {payment.type === 'adjustment' && (
+                          <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${payment.adjustmentType === 'credit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {payment.adjustmentType?.toUpperCase()}
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>${payment.amount.toLocaleString()}</TableCell>
                       <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${payment.status === 'completed'
-                          ? 'bg-success/10 text-success'
-                          : payment.status === 'cancelled'
-                            ? 'bg-destructive/10 text-destructive'
-                            : 'bg-warning/10 text-warning'
+
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${payment.type === 'adjustment'
+                          ? 'bg-blue-100 text-blue-800'
+                          : payment.status === 'completed'
+                            ? 'bg-success/10 text-success'
+                            : payment.status === 'cancelled'
+                              ? 'bg-destructive/10 text-destructive'
+                              : 'bg-warning/10 text-warning'
                           }`}>
-                          {payment.status === 'completed' ? (
+                          {payment.type === 'adjustment' ? (
+                            <Clock className="h-3 w-3" /> // Use a generic icon or specific if available
+                          ) : payment.status === 'completed' ? (
                             <CheckCircle className="h-3 w-3" />
                           ) : payment.status === 'cancelled' ? (
                             <XCircle className="h-3 w-3" />
                           ) : (
                             <Clock className="h-3 w-3" />
                           )}
-                          {payment.status}
+                          {payment.type === 'adjustment' ? 'Adjustment' : payment.status}
                         </span>
                       </TableCell>
                     </TableRow>

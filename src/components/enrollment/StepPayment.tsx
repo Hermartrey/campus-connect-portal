@@ -13,7 +13,7 @@ interface StepPaymentProps {
   data: Partial<EnrollmentFormData>;
   onUpdate: (data: Partial<EnrollmentFormData>) => void;
   onBack: () => void;
-  onSubmit: () => void;
+  onSubmit: (data?: Partial<EnrollmentFormData>) => void;
 }
 
 export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPaymentProps) {
@@ -79,25 +79,30 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
 
     const amount = parseFloat(paymentAmount);
 
+    // Build payment data to pass directly to onSubmit
+    // This avoids React's async state update timing issue
+    let paymentData: Partial<EnrollmentFormData>;
+
     // Simulate payment processing for online payment
     if (paymentMethod === 'online') {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      onUpdate({
+      paymentData = {
         paymentMethod: 'online',
         paymentAmount: amount,
         paymentStatus: 'completed',
         paymentReceipt: receiptBase64,
         paymentReceiptName: receipt?.name,
-      });
+      };
     } else {
-      onUpdate({
+      paymentData = {
         paymentMethod: 'onsite',
         paymentAmount: amount,
         paymentStatus: 'pending',
-      });
+      };
     }
 
-    onSubmit();
+    onUpdate(paymentData);
+    onSubmit(paymentData);
     setIsProcessing(false);
   };
 

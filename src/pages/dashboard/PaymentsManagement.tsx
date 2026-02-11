@@ -110,7 +110,12 @@ export default function PaymentsManagement() {
 
   const totalCollected = allPayments
     .filter(p => p.status === 'completed')
-    .reduce((sum, p) => sum + p.amount, 0);
+    .reduce((sum, p) => {
+      if (p.type === 'adjustment') {
+        return p.adjustmentType === 'debit' ? sum - p.amount : sum + p.amount;
+      }
+      return sum + p.amount;
+    }, 0);
 
   const pendingPayments = allPayments.filter(p => p.status === 'pending');
   const totalPending = pendingPayments.reduce((sum, p) => sum + p.amount, 0);

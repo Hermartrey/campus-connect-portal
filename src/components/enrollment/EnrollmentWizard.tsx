@@ -53,14 +53,21 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (latestData?: Partial<EnrollmentFormData>) => {
     if (!user?.id) return;
 
-    submitEnrollment(user.id, formData as EnrollmentFormData);
+    // Merge the latest data (from StepPayment) with formData to avoid
+    // React's async state update timing issue where onUpdate + onSubmit
+    // would submit stale formData missing payment receipt and amount.
+    const finalData = latestData
+      ? { ...formData, ...latestData }
+      : formData;
+
+    submitEnrollment(user.id, finalData as EnrollmentFormData);
     addNotification({
       userId: 'admin-1',
       title: 'New Enrollment Application',
-      message: `${formData.firstName} ${formData.lastName} has submitted an enrollment application for grade ${formData.gradeLevel}.`,
+      message: `${finalData.firstName} ${finalData.lastName} has submitted an enrollment application for grade ${finalData.gradeLevel}.`,
       type: 'info',
       link: '/dashboard/enrollments',
     });

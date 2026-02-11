@@ -1,6 +1,6 @@
 import { useStudents } from '@/hooks/useStudents';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, Clock, DollarSign } from 'lucide-react';
+import { Users, UserCheck, Clock, DollarSign, Wallet } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { students } = useStudents();
@@ -9,39 +9,40 @@ export default function AdminDashboard() {
     totalStudents: students.length,
     approved: students.filter(s => s.enrollmentStatus === 'approved').length,
     pending: students.filter(s => s.enrollmentStatus === 'pending').length,
-    totalPayments: students.reduce((acc, s) => 
+    totalPayments: students.reduce((acc, s) =>
       acc + (s.payments?.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0) || 0), 0
     ),
+    totalOutstanding: students.reduce((acc, s) => acc + (s.tuitionBalance || 0), 0),
   };
 
   const statCards = [
-    { 
-      title: 'Total Students', 
-      value: stats.totalStudents, 
-      icon: Users, 
+    {
+      title: 'Total Students',
+      value: stats.totalStudents,
+      icon: Users,
       description: 'Registered students',
       color: 'text-primary'
     },
-    { 
-      title: 'Approved', 
-      value: stats.approved, 
-      icon: UserCheck, 
-      description: 'Enrolled students',
+    {
+      title: 'Payments',
+      value: `$${stats.totalPayments.toLocaleString()}`,
+      icon: DollarSign,
+      description: 'Total collected',
       color: 'text-success'
     },
-    { 
-      title: 'Pending', 
-      value: stats.pending, 
-      icon: Clock, 
+    {
+      title: 'Outstanding',
+      value: `$${stats.totalOutstanding.toLocaleString()}`,
+      icon: Wallet,
+      description: 'Total balance',
+      color: 'text-destructive'
+    },
+    {
+      title: 'Pending',
+      value: stats.pending,
+      icon: Clock,
       description: 'Awaiting approval',
       color: 'text-warning'
-    },
-    { 
-      title: 'Payments', 
-      value: `$${stats.totalPayments.toLocaleString()}`, 
-      icon: DollarSign, 
-      description: 'Total collected',
-      color: 'text-secondary'
     },
   ];
 
@@ -87,13 +88,12 @@ export default function AdminDashboard() {
                     <p className="font-medium">{student.name}</p>
                     <p className="text-sm text-muted-foreground">{student.email}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    student.enrollmentStatus === 'approved' 
-                      ? 'bg-success/10 text-success' 
-                      : student.enrollmentStatus === 'rejected'
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${student.enrollmentStatus === 'approved'
+                    ? 'bg-success/10 text-success'
+                    : student.enrollmentStatus === 'rejected'
                       ? 'bg-destructive/10 text-destructive'
                       : 'bg-warning/10 text-warning'
-                  }`}>
+                    }`}>
                     {student.enrollmentStatus}
                   </span>
                 </div>

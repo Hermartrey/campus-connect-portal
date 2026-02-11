@@ -15,6 +15,8 @@ import DashboardStudentEnrollment from "./pages/DashboardStudentEnrollment";
 import DashboardStudentPayments from "./pages/DashboardStudentPayments";
 import DashboardStudentDetails from "./pages/DashboardStudentDetails";
 import DashboardTuition from "./pages/DashboardTuition";
+import DashboardFinancialStatus from "./pages/DashboardFinancialStatus";
+import DashboardTransactions from "./pages/DashboardTransactions";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -72,6 +74,22 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <DashboardTuition />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/financial-status"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DashboardFinancialStatus />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/transactions"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DashboardTransactions />
                 </ProtectedRoute>
               }
             />

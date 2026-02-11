@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Student, Payment, EnrollmentFormData } from '@/types/auth';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const USERS_KEY = 'school_users';
 
 export function useStudents() {
   const [students, setStudents] = useState<Student[]>([]);
+  const { addNotification } = useNotifications();
 
   const loadStudents = () => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
@@ -43,6 +45,20 @@ export function useStudents() {
           // Deduct upfront payment
           const upfrontPayment = u.enrollmentData?.paymentAmount || 0;
           updates.tuitionBalance = Math.max(0, tuitionAmount - upfrontPayment);
+
+          // Add upfront payment to payment history if paid online
+          if (upfrontPayment > 0) {
+            const upfrontRecord: Payment = {
+              id: `upfront-${Date.now()}`,
+              amount: upfrontPayment,
+              date: new Date().toISOString(),
+              status: 'completed',
+              description: 'Upfront Enrollment Payment',
+              receipt: u.enrollmentData?.paymentReceipt,
+              receiptName: u.enrollmentData?.paymentReceiptName,
+            };
+            updates.payments = [...(u.payments || []), upfrontRecord];
+          }
         }
         return { ...u, ...updates };
       }
@@ -185,11 +201,46 @@ export function useStudents() {
     loadStudents();
   };
 
-  const updateTuitionBalance = (studentId: string, balance: number) => {
+  const updateTuitionBalance = (studentId: string, newBalance: number) => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const updatedUsers = users.map((u: any) => {
       if (u.id === studentId) {
-        return { ...u, tuitionBalance: balance };
+        // Calculate difference
+        const oldBalance = u.tuitionBalance || 0;
+
+        // Only record if changed
+        if (oldBalance !== newBalance) {
+          const diff = newBalance - oldBalance;
+          // Determine if it looks like a credit (balance reduced) or debit (balance increased)
+          const isCredit = diff < 0; // Balance went DOWN (e.g., 5000 -> 4000) = Credit (Payment like)
+
+          const adjustmentRecord: Payment = {
+            id: `adj-${Date.now()}`,
+            amount: Math.abs(diff),
+            date: new Date().toISOString(),
+            status: 'completed',
+            description: `Manual Adjustment: ${oldBalance.toLocaleString()} -> ${newBalance.toLocaleString()}`,
+            type: 'adjustment',
+            adjustmentType: isCredit ? 'credit' : 'debit'
+          };
+
+          // Notify the student
+          addNotification({
+            userId: studentId,
+            title: 'Balance Adjusted',
+            message: `Your tuition balance has been adjusted. ${isCredit ? 'Credit' : 'Debit'}: $${Math.abs(diff).toLocaleString()}. Reason: Manual Adjustment.`,
+            type: 'info',
+            link: '/dashboard/payments'
+          });
+
+          return {
+            ...u,
+            tuitionBalance: newBalance,
+            payments: [...(u.payments || []), adjustmentRecord]
+          };
+        }
+
+        return u;
       }
       return u;
     });

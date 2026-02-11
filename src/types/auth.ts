@@ -31,10 +31,13 @@ export interface EnrollmentFormData {
   guardianEmail: string;
   secondaryGuardianName?: string;
   secondaryGuardianPhone?: string;
-  // Step 2: Documents (store file names for mock)
+  // Step 2: Documents (store file names and Base64 data)
   birthCertificate?: string;
+  birthCertificateData?: string; // Base64 content
   primarySchoolGrades?: string;
+  primarySchoolGradesData?: string; // Base64 content
   additionalDocuments?: string[];
+  additionalDocumentsData?: { name: string; data: string }[]; // Base64 content
   // Step 4: Payment
   paymentMethod: 'online' | 'onsite';
   paymentAmount?: number;
@@ -65,6 +68,8 @@ export interface Payment {
   description: string;
   receipt?: string; // Base64 data URL of receipt document
   receiptName?: string; // Original file name
+  type?: 'payment' | 'adjustment';
+  adjustmentType?: 'credit' | 'debit';
 }
 
 export interface EnrollmentForm {

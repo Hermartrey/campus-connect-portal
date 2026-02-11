@@ -12,7 +12,9 @@ import {
   Menu,
   X,
   DollarSign,
-  Bell
+  Bell,
+  Wallet,
+  History
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -47,6 +49,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       { icon: FileText, label: 'Enrollments', path: '/dashboard/enrollments' },
       { icon: CreditCard, label: 'Payments', path: '/dashboard/payments' },
       { icon: DollarSign, label: 'Tuition', path: '/dashboard/tuition' },
+      { icon: Wallet, label: 'Financial Status', path: '/dashboard/financial-status' },
+      { icon: History, label: 'Transaction History', path: '/dashboard/transactions' },
     ]
     : [
       { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -67,7 +71,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-sidebar text-sidebar-foreground transform transition-transform duration-200 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-sidebar-foreground transform transition-transform duration-200 lg:translate-x-0 border-r",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -122,7 +126,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64 transition-all duration-200">
         {/* Top Bar */}
         <header className="h-16 border-b bg-card flex items-center px-4 lg:px-6 sticky top-0 z-30">
           <Button

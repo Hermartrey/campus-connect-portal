@@ -75,7 +75,7 @@ describe('useStudents - Upfront Payment Deduction', () => {
             result.current.updateStudentStatus('student-1', 'approved');
         });
 
-        // 4. Verify balance deduction
+        // 4. Verify balance deduction and payment history
         // Total Tuition (5000) - Upfront Payment (1500) = 3500
         act(() => {
             result.current.refresh();
@@ -83,5 +83,11 @@ describe('useStudents - Upfront Payment Deduction', () => {
         student = result.current.getStudentById('student-1');
         expect(student?.enrollmentStatus).toBe('approved');
         expect(student?.tuitionBalance).toBe(3500);
+
+        // Verify payment history
+        expect(student?.payments).toHaveLength(1);
+        expect(student?.payments?.[0].amount).toBe(1500);
+        expect(student?.payments?.[0].status).toBe('completed');
+        expect(student?.payments?.[0].description).toBe('Upfront Enrollment Payment');
     });
 });

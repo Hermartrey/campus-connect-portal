@@ -16,6 +16,7 @@ export default function StudentDetails() {
     const { getStudentById, updateStudentData, updateTuitionBalance } = useStudents();
     const [student, setStudent] = useState<Student | undefined>();
     const [isEditing, setIsEditing] = useState(searchParams.get('edit') === 'true');
+    const [isEditingBalance, setIsEditingBalance] = useState(false);
     const [formData, setFormData] = useState<Partial<EnrollmentFormData>>({});
     const [editableBalance, setEditableBalance] = useState<string>('0');
     const { toast } = useToast();
@@ -31,7 +32,8 @@ export default function StudentDetails() {
                 setEditableBalance(data.tuitionBalance?.toString() || '0');
             }
         }
-    }, [id, getStudentById]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
     const handleSave = () => {
         if (id && formData) {
@@ -317,22 +319,81 @@ export default function StudentDetails() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                                <p className="text-sm text-muted-foreground">Current Balance</p>
-                                {isEditing ? (
-                                    <div className="mt-1 relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
-                                        <Input
-                                            type="number"
-                                            value={editableBalance}
-                                            onChange={(e) => setEditableBalance(e.target.value)}
-                                            className="pl-7 h-9 font-bold text-lg"
-                                        />
+                            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 relative group">
+                                <div className="flex justify-between items-start">
+                                    <p className="text-sm text-muted-foreground">Current Balance</p>
+                                    {!isEditing && !isEditingBalance && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => setIsEditingBalance(true)}
+                                        >
+                                            <Edit className="h-3.5 w-3.5" />
+                                        </Button>
+                                    )}
+                                </div>
+                                {isEditing || isEditingBalance ? (
+                                    <div className="mt-1 space-y-2">
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
+                                            <Input
+                                                type="number"
+                                                value={editableBalance}
+                                                onChange={(e) => setEditableBalance(e.target.value)}
+                                                className="pl-7 h-9 font-bold text-lg bg-background"
+                                                autoFocus={isEditingBalance}
+                                            />
+                                        </div>
+                                        {isEditingBalance && (
+                                            <div className="flex gap-2">
+                                                <Button size="sm" className="h-7 px-3 text-xs" onClick={() => {
+                                                    const balance = parseFloat(editableBalance);
+                                                    if (!isNaN(balance)) {
+                                                        updateTuitionBalance(id!, balance);
+                                                        toast({ title: "Balance Updated", description: "The student's balance has been updated." });
+                                                        setIsEditingBalance(false);
+                                                        setStudent(getStudentById(id!));
+                                                    }
+                                                }}>
+                                                    Save
+                                                </Button>
+                                                <Button variant="outline" size="sm" className="h-7 px-3 text-xs" onClick={() => {
+                                                    setIsEditingBalance(false);
+                                                    setEditableBalance(student?.tuitionBalance?.toString() || '0');
+                                                }}>
+                                                    Cancel
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <p className="text-2xl font-bold text-primary">
                                         ${student.tuitionBalance?.toLocaleString() || '0.00'}
                                     </p>
+                                )}
+                            </div>
+
+                            <div className="p-4 bg-muted/30 rounded-lg border relative group">
+                                <div className="flex justify-between items-start mb-2">
+                                    <p className="text-sm text-muted-foreground">Payment Status</p>
+                                </div>
+                                {isEditing ? (
+                                    <select
+                                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={formData.paymentStatus || 'pending'}
+                                        onChange={(e) => handleChange('paymentStatus', e.target.value)}
+                                    >
+                                        <option value="pending">Pending</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                ) : (
+                                    <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${student.enrollmentData?.paymentStatus === 'completed'
+                                        ? 'border-transparent bg-green-500 text-white hover:bg-green-600'
+                                        : 'border-transparent bg-yellow-500 text-white hover:bg-yellow-600'
+                                        }`}>
+                                        {(student.enrollmentData?.paymentStatus || 'pending').charAt(0).toUpperCase() + (student.enrollmentData?.paymentStatus || 'pending').slice(1)}
+                                    </div>
                                 )}
                             </div>
 

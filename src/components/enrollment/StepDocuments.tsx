@@ -15,17 +15,30 @@ interface StepDocumentsProps {
 
 export default function StepDocuments({ data, onUpdate, onNext, onBack }: StepDocumentsProps) {
   const [birthCertificate, setBirthCertificate] = useState<string>(data.birthCertificate || '');
+  const [birthCertificateData, setBirthCertificateData] = useState<string>(data.birthCertificateData || '');
+
   const [primarySchoolGrades, setPrimarySchoolGrades] = useState<string>(data.primarySchoolGrades || '');
+  const [primarySchoolGradesData, setPrimarySchoolGradesData] = useState<string>(data.primarySchoolGradesData || '');
+
   const [additionalDocs, setAdditionalDocs] = useState<string[]>(data.additionalDocuments || []);
+  const [additionalDocsData, setAdditionalDocsData] = useState<{ name: string; data: string }[]>(data.additionalDocumentsData || []);
+
   const [errors, setErrors] = useState<{ birthCertificate?: string; primarySchoolGrades?: string }>({});
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setter: (value: string) => void
+    setName: (value: string) => void,
+    setData: (value: string) => void
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      setter(file.name);
+      setName(file.name);
+      // Read file as Base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setData(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -33,16 +46,23 @@ export default function StepDocuments({ data, onUpdate, onNext, onBack }: StepDo
     const file = e.target.files?.[0];
     if (file && !additionalDocs.includes(file.name)) {
       setAdditionalDocs(prev => [...prev, file.name]);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAdditionalDocsData(prev => [...prev, { name: file.name, data: reader.result as string }]);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const removeAdditionalDoc = (fileName: string) => {
     setAdditionalDocs(prev => prev.filter(f => f !== fileName));
+    setAdditionalDocsData(prev => prev.filter(f => f.name !== fileName));
   };
 
   const handleNext = () => {
     const newErrors: { birthCertificate?: string; primarySchoolGrades?: string } = {};
-    
+
     if (!birthCertificate) {
       newErrors.birthCertificate = 'Birth certificate is required';
     }
@@ -57,8 +77,11 @@ export default function StepDocuments({ data, onUpdate, onNext, onBack }: StepDo
 
     onUpdate({
       birthCertificate,
+      birthCertificateData,
       primarySchoolGrades,
+      primarySchoolGradesData,
       additionalDocuments: additionalDocs,
+      additionalDocumentsData: additionalDocsData,
     });
     onNext();
   };
@@ -87,7 +110,7 @@ export default function StepDocuments({ data, onUpdate, onNext, onBack }: StepDo
                   id="birthCertificate"
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange(e, setBirthCertificate)}
+                  onChange={(e) => handleFileChange(e, setBirthCertificate, setBirthCertificateData)}
                   className="cursor-pointer"
                 />
               </div>
@@ -117,7 +140,7 @@ export default function StepDocuments({ data, onUpdate, onNext, onBack }: StepDo
                   id="primarySchoolGrades"
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange(e, setPrimarySchoolGrades)}
+                  onChange={(e) => handleFileChange(e, setPrimarySchoolGrades, setPrimarySchoolGradesData)}
                   className="cursor-pointer"
                 />
               </div>
