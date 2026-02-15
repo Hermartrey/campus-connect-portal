@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Login() {
@@ -21,7 +21,7 @@ export default function Login() {
     setIsLoading(true);
 
     const result = await login(email, password);
-    
+
     if (result.success) {
       toast({
         title: 'Welcome back!',
@@ -35,7 +35,7 @@ export default function Login() {
         variant: 'destructive',
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -44,8 +44,10 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link to="/" className="flex items-center justify-center gap-2 mb-4">
-            <GraduationCap className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">EduPortal</span>
+            <Link className="flex items-center gap-2" to="/">
+              <img src="/ichs-logo.png" alt="ICHS Logo" className="h-8 w-8 object-contain" />
+              <span className="text-xl font-bold text-foreground">ICHS</span>
+            </Link>
           </Link>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
           <CardDescription>Sign in to access your account</CardDescription>

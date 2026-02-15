@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useTuition } from '@/hooks/useTuition';
 import { useToast } from '@/hooks/use-toast';
 
@@ -60,7 +60,6 @@ export default function TuitionManagement() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <DollarSign className="h-5 w-5" />
                         Tuition Rates by Grade Level
                     </CardTitle>
                     <CardDescription>
@@ -91,7 +90,7 @@ export default function TuitionManagement() {
                                                 <Label htmlFor={`amount-${rate.gradeLevel}`} className="sr-only">
                                                     Amount for {GRADE_LABELS[rate.gradeLevel]}
                                                 </Label>
-                                                <span className="text-muted-foreground">$</span>
+                                                <span className="text-muted-foreground">₱</span>
                                                 <Input
                                                     id={`amount-${rate.gradeLevel}`}
                                                     type="number"

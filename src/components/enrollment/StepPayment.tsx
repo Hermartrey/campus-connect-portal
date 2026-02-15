@@ -244,9 +244,9 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
               <AlertDescription>
                 <p className="font-medium mb-1">Onsite Payment Instructions:</p>
                 <ul className="text-sm space-y-1 list-disc list-inside">
-                  <li>Visit the school office at 123 Education Ave</li>
+                  <li>Visit the school office</li>
                   <li>Office hours: Mon-Fri, 8:00 AM - 5:00 PM</li>
-                  <li>Accepted: Cash, Check, Credit/Debit Card</li>
+                  <li>Accepted: Cash, Gcash</li>
                   <li>Payment must be completed within 7 days of enrollment approval</li>
                 </ul>
               </AlertDescription>

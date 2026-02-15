@@ -3,12 +3,13 @@ import { useStudents } from '@/hooks/useStudents';
 import { useEffect, useState } from 'react';
 import { Student } from '@/types/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Clock, XCircle, FileText, User, Users, School } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, Clock, XCircle, FileText, User, Users, School, RefreshCw } from 'lucide-react';
 import EnrollmentWizard from '@/components/enrollment/EnrollmentWizard';
 
 export default function StudentEnrollment() {
   const { user } = useAuth();
-  const { getStudentById } = useStudents();
+  const { getStudentById, resetEnrollment } = useStudents();
   const [studentData, setStudentData] = useState<Student | null>(null);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function StudentEnrollment() {
         return {
           icon: <XCircle className="h-16 w-16 text-destructive" />,
           title: 'Enrollment Not Approved',
-          description: 'Unfortunately, your enrollment application was not approved at this time. Please contact the admissions office for more information.',
+          description: 'Unfortunately, your enrollment application was not approved at this time. You may submit a new application by clicking the button below.',
           color: 'border-destructive',
         };
       default:
@@ -73,6 +74,20 @@ export default function StudentEnrollment() {
               <p className="mt-4 text-sm text-muted-foreground">
                 Submitted on {new Date(studentData.enrollmentSubmittedAt).toLocaleDateString()}
               </p>
+            )}
+            {studentData?.enrollmentStatus === 'rejected' && (
+              <Button
+                className="mt-6"
+                onClick={() => {
+                  if (user?.id) {
+                    resetEnrollment(user.id);
+                    setStudentData(getStudentById(user.id) || null);
+                  }
+                }}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Apply Again
+              </Button>
             )}
           </div>
         </CardContent>

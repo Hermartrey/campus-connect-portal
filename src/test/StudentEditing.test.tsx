@@ -34,6 +34,7 @@ vi.mock('@/hooks/use-toast', () => ({
 
 describe('Student Details Editing', () => {
     const mockUpdateStudentData = vi.fn();
+    const mockUpdateTuitionBalance = vi.fn();
     const mockGetStudentById = vi.fn();
     const mockToast = vi.fn();
 
@@ -43,6 +44,7 @@ describe('Student Details Editing', () => {
         (useStudents as any).mockReturnValue({
             getStudentById: mockGetStudentById,
             updateStudentData: mockUpdateStudentData,
+            updateTuitionBalance: mockUpdateTuitionBalance,
         });
         (useToast as any).mockReturnValue({ toast: mockToast });
     });

@@ -248,6 +248,23 @@ export function useStudents() {
     loadStudents();
   };
 
+  const resetEnrollment = (studentId: string) => {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const updatedUsers = users.map((u: any) => {
+      if (u.id === studentId) {
+        return {
+          ...u,
+          enrollmentStatus: 'not_enrolled',
+          enrollmentData: undefined,
+          enrollmentSubmittedAt: undefined,
+        };
+      }
+      return u;
+    });
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    loadStudents();
+  };
+
   return {
     students,
     updateStudentStatus,
@@ -260,6 +277,7 @@ export function useStudents() {
     deleteStudent,
     confirmPayment,
     cancelPayment,
+    resetEnrollment,
     refresh: loadStudents,
   };
 }

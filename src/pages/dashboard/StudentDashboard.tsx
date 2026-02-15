@@ -62,11 +62,11 @@ export default function StudentDashboard() {
               {studentData?.enrollmentStatus || 'pending'}
             </span>
             <p className="text-xs text-muted-foreground mt-2">
-              {studentData?.enrollmentStatus === 'approved' 
+              {studentData?.enrollmentStatus === 'approved'
                 ? 'Your enrollment has been approved!'
                 : studentData?.enrollmentStatus === 'rejected'
-                ? 'Please contact the office for more information.'
-                : 'Your application is under review.'}
+                  ? 'Please contact the office for more information.'
+                  : 'Your application is under review.'}
             </p>
           </CardContent>
         </Card>
@@ -81,10 +81,10 @@ export default function StudentDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${studentData?.tuitionBalance?.toLocaleString() || '0'}
+              ₱{studentData?.tuitionBalance?.toLocaleString() || '0'}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {studentData?.tuitionBalance && studentData.tuitionBalance > 0 
+              {studentData?.tuitionBalance && studentData.tuitionBalance > 0
                 ? 'Payment due'
                 : 'All paid up!'}
             </p>
@@ -153,9 +153,8 @@ export default function StudentDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">${payment.amount.toLocaleString()}</p>
-                    <span className={`text-xs ${
-                      payment.status === 'completed' ? 'text-success' : 'text-warning'
-                    }`}>
+                    <span className={`text-xs ${payment.status === 'completed' ? 'text-success' : 'text-warning'
+                      }`}>
                       {payment.status}
                     </span>
                   </div>

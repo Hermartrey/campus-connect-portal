@@ -133,13 +133,15 @@ export default function Landing() {
       <footer className="border-t py-8 px-4 bg-card">
         <div className="container mx-auto text-center text-muted-foreground">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-foreground">EduPortal Academy</span>
+            <Link className="flex items-center gap-2" to="/">
+              <img src="/ichs-logo.png" alt="ICHS Logo" className="h-8 w-8 object-contain" />
+              <span className="text-xl font-bold text-foreground">Immaculate Conception High School</span>
+            </Link>
           </div>
           <p className="text-sm">
-            © {new Date().getFullYear()} EduPortal Academy. All rights reserved.
+            © {new Date().getFullYear()} Immaculate Conception High School. All rights reserved.
           </p>
-          <p className="text-xs mt-2">Demo Version - Data stored in localStorage</p>
+          {/* <p className="text-xs mt-2">Demo Version - Data stored in localStorage</p> */}
         </div>
       </footer>
     </div>

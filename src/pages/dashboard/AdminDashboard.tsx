@@ -25,14 +25,14 @@ export default function AdminDashboard() {
     },
     {
       title: 'Payments',
-      value: `$${stats.totalPayments.toLocaleString()}`,
+      value: `₱${stats.totalPayments.toLocaleString()}`,
       icon: DollarSign,
       description: 'Total collected',
       color: 'text-success'
     },
     {
       title: 'Outstanding',
-      value: `$${stats.totalOutstanding.toLocaleString()}`,
+      value: `₱${stats.totalOutstanding.toLocaleString()}`,
       icon: Wallet,
       description: 'Total balance',
       color: 'text-destructive'
