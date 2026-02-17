@@ -47,8 +47,10 @@ export default function StudentEnrollment() {
       );
     }
 
-    return <EnrollmentWizard onSuccess={() => user?.id && setStudentData(getStudentById(user.id) || null)} />;
+    const isReturning = !!studentData?.enrollmentData;
+    return <EnrollmentWizard onSuccess={() => user?.id && setStudentData(getStudentById(user.id) || null)} isReturning={isReturning} />;
   }
+
 
   const getStatusContent = () => {
     switch (studentData?.enrollmentStatus) {

@@ -272,9 +272,10 @@ export function useStudents() {
         return {
           ...u,
           enrollmentStatus: 'not_enrolled',
-          enrollmentData: undefined,
+          // Keep enrollmentData to detect returning students
+          // We might want to clear specific fields if needed, but keeping it allows pre-filling.
+          // The critical part is checking if enrollmentData exists in the UI to trigger the shortened flow.
           enrollmentSubmittedAt: undefined,
-          // Keep tuitionBalance and payments intact
         };
       }
       return u;

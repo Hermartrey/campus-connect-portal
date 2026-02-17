@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudents } from '@/hooks/useStudents';
 import { EnrollmentFormData } from '@/types/auth';
@@ -11,21 +11,28 @@ import StepDemographics from './StepDemographics';
 import StepDocuments from './StepDocuments';
 import StepReview from './StepReview';
 import StepPayment from './StepPayment';
+import StepAcademicInfo from './StepAcademicInfo';
 
-const STEPS = [
+const NEW_STUDENT_STEPS = [
   { id: 1, title: 'Personal Info', description: 'Demographics & Guardian' },
   { id: 2, title: 'Documents', description: 'Upload Required Files' },
   { id: 3, title: 'Review', description: 'Verify Information' },
   { id: 4, title: 'Payment', description: 'Enrollment Fee' },
 ];
 
+const RETURNING_STUDENT_STEPS = [
+  { id: 1, title: 'Academic Info', description: 'Grade Level & Strand' },
+  { id: 2, title: 'Payment', description: 'Enrollment Fee' },
+];
+
 interface EnrollmentWizardProps {
   onSuccess?: () => void;
+  isReturning?: boolean;
 }
 
-export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
+export default function EnrollmentWizard({ onSuccess, isReturning = false }: EnrollmentWizardProps) {
   const { user } = useAuth();
-  const { submitEnrollment } = useStudents();
+  const { submitEnrollment, getStudentById } = useStudents();
   const { toast } = useToast();
   const { addNotification } = useNotifications();
   const [currentStep, setCurrentStep] = useState(1);
@@ -35,14 +42,31 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
     paymentMethod: 'onsite',
   });
 
-  const progress = (currentStep / STEPS.length) * 100;
+  // Pre-fill data for returning students
+  useEffect(() => {
+    if (isReturning && user?.id) {
+      const student = getStudentById(user.id);
+      if (student?.enrollmentData) {
+        setFormData(prev => ({
+          ...prev,
+          ...student.enrollmentData,
+          // Clear grade level/strand to force re-selection
+          gradeLevel: undefined,
+          strand: undefined,
+        }));
+      }
+    }
+  }, [isReturning, user?.id]);
+
+  const steps = isReturning ? RETURNING_STUDENT_STEPS : NEW_STUDENT_STEPS;
+  const progress = (currentStep / steps.length) * 100;
 
   const updateFormData = (data: Partial<EnrollmentFormData>) => {
     setFormData(prev => ({ ...prev, ...data }));
   };
 
   const handleNext = () => {
-    if (currentStep < STEPS.length) {
+    if (currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -56,9 +80,7 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
   const handleSubmit = (latestData?: Partial<EnrollmentFormData>) => {
     if (!user?.id) return;
 
-    // Merge the latest data (from StepPayment) with formData to avoid
-    // React's async state update timing issue where onUpdate + onSubmit
-    // would submit stale formData missing payment receipt and amount.
+    // Merge the latest data (from StepPayment) with formData
     const finalData = latestData
       ? { ...formData, ...latestData }
       : formData;
@@ -66,7 +88,7 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
     submitEnrollment(user.id, finalData as EnrollmentFormData);
     addNotification({
       userId: 'admin-1',
-      title: 'New Enrollment Application',
+      title: isReturning ? 'Returning Student Enrollment' : 'New Enrollment Application',
       message: `${finalData.firstName} ${finalData.lastName} has submitted an enrollment application for grade ${finalData.gradeLevel}.`,
       type: 'info',
       link: '/dashboard/enrollments',
@@ -90,8 +112,14 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Student Enrollment</h2>
-        <p className="text-muted-foreground">Complete the form below to enroll at Immaculate Conception High School</p>
+        <h2 className="text-2xl font-bold text-foreground">
+          {isReturning ? 'Returning Student Enrollment' : 'Student Enrollment'}
+        </h2>
+        <p className="text-muted-foreground">
+          {isReturning
+            ? 'Welcome back! Please select your new grade level to proceed.'
+            : 'Complete the form below to enroll at Immaculate Conception High School'}
+        </p>
       </div>
 
       {/* Progress Steps */}
@@ -100,8 +128,8 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
           <div className="mb-4">
             <Progress value={progress} className="h-2" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {STEPS.map((step) => (
+          <div className={`grid ${isReturning ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4'} gap-4`}>
+            {steps.map((step) => (
               <button
                 key={step.id}
                 onClick={() => goToStep(step.id)}
@@ -138,37 +166,61 @@ export default function EnrollmentWizard({ onSuccess }: EnrollmentWizardProps) {
       </Card>
 
       {/* Step Content */}
-      {currentStep === 1 && (
-        <StepDemographics
-          data={formData}
-          onUpdate={updateFormData}
-          onNext={handleNext}
-        />
-      )}
-      {currentStep === 2 && (
-        <StepDocuments
-          data={formData}
-          onUpdate={updateFormData}
-          onNext={handleNext}
-          onBack={handleBack}
-        />
-      )}
-      {currentStep === 3 && (
-        <StepReview
-          data={formData}
-          onUpdate={updateFormData}
-          onNext={handleNext}
-          onBack={handleBack}
-          goToStep={goToStep}
-        />
-      )}
-      {currentStep === 4 && (
-        <StepPayment
-          data={formData}
-          onUpdate={updateFormData}
-          onBack={handleBack}
-          onSubmit={handleSubmit}
-        />
+      {!isReturning ? (
+        // NEW STUDENT FLOW
+        <>
+          {currentStep === 1 && (
+            <StepDemographics
+              data={formData}
+              onUpdate={updateFormData}
+              onNext={handleNext}
+            />
+          )}
+          {currentStep === 2 && (
+            <StepDocuments
+              data={formData}
+              onUpdate={updateFormData}
+              onNext={handleNext}
+              onBack={handleBack}
+            />
+          )}
+          {currentStep === 3 && (
+            <StepReview
+              data={formData}
+              onUpdate={updateFormData}
+              onNext={handleNext}
+              onBack={handleBack}
+              goToStep={goToStep}
+            />
+          )}
+          {currentStep === 4 && (
+            <StepPayment
+              data={formData}
+              onUpdate={updateFormData}
+              onBack={handleBack}
+              onSubmit={handleSubmit}
+            />
+          )}
+        </>
+      ) : (
+        // RETURNING STUDENT FLOW
+        <>
+          {currentStep === 1 && (
+            <StepAcademicInfo
+              data={formData}
+              onUpdate={updateFormData}
+              onNext={handleNext}
+            />
+          )}
+          {currentStep === 2 && (
+            <StepPayment
+              data={formData}
+              onUpdate={updateFormData}
+              onBack={handleBack}
+              onSubmit={handleSubmit}
+            />
+          )}
+        </>
       )}
     </div>
   );
