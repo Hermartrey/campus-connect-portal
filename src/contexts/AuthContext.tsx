@@ -3,7 +3,7 @@ import { User, Student, Admin } from '@/types/auth';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   signup: (email: string, password: string, name: string, role: 'student' | 'admin') => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isLoading: boolean;
@@ -18,7 +18,7 @@ const USERS_KEY = 'school_users';
 const initializeDefaultAdmin = () => {
   const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
   const adminExists = users.some((u: User) => u.role === 'admin');
-  
+
   if (!adminExists) {
     const defaultAdmin: Admin = {
       id: 'admin-1',
@@ -45,53 +45,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const foundUser = users.find((u: any) => u.email === email && u.password === password);
-    
+
     if (foundUser) {
       const { password: _, ...userWithoutPassword } = foundUser;
       setUser(userWithoutPassword);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(userWithoutPassword));
-      return { success: true };
+      return { success: true, user: userWithoutPassword };
     }
-    
+
     return { success: false, error: 'Invalid email or password' };
   };
 
   const signup = async (email: string, password: string, name: string, role: 'student' | 'admin'): Promise<{ success: boolean; error?: string }> => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    
+
     if (users.some((u: User) => u.email === email)) {
       return { success: false, error: 'Email already exists' };
     }
 
-    const newUser: Student | Admin = role === 'student' 
+    const newUser: Student | Admin = role === 'student'
       ? {
-          id: `student-${Date.now()}`,
-          email,
-          name,
-          role: 'student',
-          createdAt: new Date().toISOString(),
-          enrollmentStatus: 'not_enrolled',
-          tuitionBalance: 0,
-          payments: [],
-        }
+        id: `student-${Date.now()}`,
+        email,
+        name,
+        role: 'student',
+        createdAt: new Date().toISOString(),
+        enrollmentStatus: 'not_enrolled',
+        tuitionBalance: 0,
+        payments: [],
+      }
       : {
-          id: `admin-${Date.now()}`,
-          email,
-          name,
-          role: 'admin',
-          createdAt: new Date().toISOString(),
-        };
+        id: `admin-${Date.now()}`,
+        email,
+        name,
+        role: 'admin',
+        createdAt: new Date().toISOString(),
+      };
 
     users.push({ ...newUser, password });
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    
+
     const { ...userWithoutPassword } = newUser;
     setUser(userWithoutPassword);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userWithoutPassword));
-    
+
     return { success: true };
   };
 

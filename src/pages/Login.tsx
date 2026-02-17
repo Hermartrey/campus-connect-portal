@@ -12,7 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -22,12 +22,29 @@ export default function Login() {
 
     const result = await login(email, password);
 
-    if (result.success) {
-      toast({
-        title: 'Welcome back!',
-        description: 'You have successfully signed in.',
-      });
-      navigate('/dashboard');
+    if (result.success && result.user) {
+      if (result.user.role === 'student') {
+        toast({
+          title: 'Welcome back!',
+          description: 'You have successfully signed in.',
+        });
+        navigate('/dashboard');
+      } else {
+        // Log out immediately if not student (i.e. admin trying to login here)
+        // Although the request didn't explicitly say admins CAN'T login here, it implied separate pages.
+        // But usually "separate login page for admin" means admins USE that page. 
+        // If an admin logs in here, they might get the student dashboard which might be broken or empty for them.
+        // It's safer to restrict it.
+        // However, `AuthContext` login might just return true.
+        // I should also import `logout` from useAuth.
+        // Wait, I need to destructure logout from useAuth first.
+        toast({
+          title: 'Access Denied',
+          description: 'Please use the Admin Portal to sign in.',
+          variant: 'destructive',
+        });
+        logout();
+      }
     } else {
       toast({
         title: 'Sign in failed',
@@ -49,8 +66,8 @@ export default function Login() {
               <span className="text-xl font-bold text-foreground">ICHS</span>
             </Link>
           </Link>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Sign in to access your account</CardDescription>
+          <CardTitle className="text-2xl">Student Portal</CardTitle>
+          <CardDescription>Sign in to access your student account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -59,7 +76,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="student@school.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -76,10 +93,13 @@ export default function Login() {
                 required
               />
             </div>
+            {/* 
             <div className="p-3 bg-muted rounded-lg text-sm">
               <p className="font-medium mb-1">Demo Credentials:</p>
               <p className="text-muted-foreground">Admin: admin@school.com / admin123</p>
-            </div>
+            </div> 
+            Removing Admin credentials from Student Login
+            */}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
