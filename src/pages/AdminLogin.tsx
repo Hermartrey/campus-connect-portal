@@ -39,9 +39,10 @@ export default function AdminLogin() {
                 });
             }
         } else {
+            console.error('Login failed:', result.error);
             toast({
                 title: 'Sign in failed',
-                description: result.error || 'Invalid credentials',
+                description: result.error || 'Invalid credentials. Please try admin@school.com / admin123',
                 variant: 'destructive',
             });
         }

@@ -21,6 +21,32 @@ export default function StudentEnrollment() {
 
   // Show enrollment wizard if not enrolled yet
   if (studentData?.enrollmentStatus === 'not_enrolled') {
+    // Check for outstanding balance from previous semester
+    if (studentData.tuitionBalance > 0) {
+      return (
+        <Card className="border-2 border-destructive">
+          <CardContent className="pt-8 pb-8">
+            <div className="flex flex-col items-center text-center">
+              <XCircle className="h-16 w-16 text-destructive" />
+              <h3 className="mt-4 text-xl font-semibold">Outstanding Balance</h3>
+              <p className="mt-2 text-muted-foreground max-w-md">
+                You cannot enroll for the new semester because you have an outstanding balance of
+                <span className="font-bold text-foreground"> ${studentData.tuitionBalance.toLocaleString()}</span>.
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Please settle your balance to proceed with enrollment.
+              </p>
+              <div className="mt-6 flex gap-4">
+                <Button variant="outline" onClick={() => window.location.href = '/dashboard/my-payments'}>
+                  View Payments
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return <EnrollmentWizard onSuccess={() => user?.id && setStudentData(getStudentById(user.id) || null)} />;
   }
 

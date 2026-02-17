@@ -265,6 +265,24 @@ export function useStudents() {
     loadStudents();
   };
 
+  const resetAllEnrollments = () => {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const updatedUsers = users.map((u: any) => {
+      if (u.role === 'student') {
+        return {
+          ...u,
+          enrollmentStatus: 'not_enrolled',
+          enrollmentData: undefined,
+          enrollmentSubmittedAt: undefined,
+          // Keep tuitionBalance and payments intact
+        };
+      }
+      return u;
+    });
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    loadStudents();
+  };
+
   return {
     students,
     updateStudentStatus,
@@ -278,6 +296,7 @@ export function useStudents() {
     confirmPayment,
     cancelPayment,
     resetEnrollment,
+    resetAllEnrollments,
     refresh: loadStudents,
   };
 }

@@ -22,10 +22,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function StudentsManagement() {
-  const { students, updateStudentStatus, deleteStudent } = useStudents();
+  const { students, updateStudentStatus, deleteStudent, resetAllEnrollments } = useStudents();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sexFilter, setSexFilter] = useState('all');
@@ -35,6 +36,15 @@ export default function StudentsManagement() {
     toast({
       title: `Student ${status}`,
       description: `The student has been ${status} successfully.`,
+    });
+  };
+
+  const handleResetAll = () => {
+    resetAllEnrollments();
+    setIsResetDialogOpen(false);
+    toast({
+      title: "Semester Reset Complete",
+      description: "All student enrollments have been reset to 'Not Enrolled'.",
     });
   };
 
@@ -111,9 +121,14 @@ export default function StudentsManagement() {
                 {filteredStudents.length} of {students.length} students matching filters
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2 self-start">
-              <RotateCcw className="h-4 w-4" /> Reset Filters
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsResetDialogOpen(true)} className="gap-2 border-destructive text-destructive hover:bg-destructive/10">
+                <RotateCcw className="h-4 w-4" /> End of Semester Reset
+              </Button>
+              <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2 self-start">
+                <RotateCcw className="h-4 w-4" /> Reset Filters
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
@@ -269,6 +284,30 @@ export default function StudentsManagement() {
               onClick={() => studentToDelete && handleDeleteStudent(studentToDelete)}
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset All Enrollments?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will reset the enrollment status of ALL students to "Not Enrolled".
+              This is intended for the end of a semester/school year.
+              <br /><br />
+              <strong>Note:</strong> Student accounts, tuition balances, and payment history will remain intact.
+              Students with outstanding balances will be blocked from re-enrolling until paid.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleResetAll}
+            >
+              Reset All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
