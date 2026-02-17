@@ -20,6 +20,7 @@ import DashboardFinancialStatus from "./pages/DashboardFinancialStatus";
 import DashboardTransactions from "./pages/DashboardTransactions";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { Chatbot } from "./components/chat/Chatbot";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <Chatbot />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
