@@ -9,7 +9,7 @@ import EnrollmentWizard from '@/components/enrollment/EnrollmentWizard';
 
 export default function StudentEnrollment() {
   const { user } = useAuth();
-  const { getStudentById, resetEnrollment } = useStudents();
+  const { getStudentById, resetEnrollment, isEnrollmentOpen } = useStudents();
   const [studentData, setStudentData] = useState<Student | null>(null);
 
   useEffect(() => {
@@ -41,6 +41,23 @@ export default function StudentEnrollment() {
                   View Payments
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (!isEnrollmentOpen) {
+      return (
+        <Card className="border-2 border-warning">
+          <CardContent className="pt-8 pb-8">
+            <div className="flex flex-col items-center text-center">
+              <Clock className="h-16 w-16 text-warning" />
+              <h3 className="mt-4 text-xl font-semibold">Enrollment Closed</h3>
+              <p className="mt-2 text-muted-foreground max-w-md">
+                Enrollment for the current semester is currently closed.
+                Please check back later or contact the school administration.
+              </p>
             </div>
           </CardContent>
         </Card>

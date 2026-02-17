@@ -3,15 +3,20 @@ import { Student, Payment, EnrollmentFormData } from '@/types/auth';
 import { useNotifications } from '@/hooks/useNotifications';
 
 const USERS_KEY = 'school_users';
+const SETTINGS_KEY = 'system_settings';
 
 export function useStudents() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [isEnrollmentOpen, setIsEnrollmentOpen] = useState(true);
   const { addNotification } = useNotifications();
 
   const loadStudents = () => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const studentList = users.filter((u: any) => u.role === 'student').map(({ password, ...s }: any) => s);
     setStudents(studentList);
+
+    const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    setIsEnrollmentOpen(settings.enrollmentOpen !== false); // Default to true
   };
 
   useEffect(() => {
@@ -298,6 +303,13 @@ export function useStudents() {
     cancelPayment,
     resetEnrollment,
     resetAllEnrollments,
+    isEnrollmentOpen,
+    toggleEnrollment: (isOpen: boolean) => {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      const newSettings = { ...settings, enrollmentOpen: isOpen };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
+      setIsEnrollmentOpen(isOpen);
+    },
     refresh: loadStudents,
   };
 }

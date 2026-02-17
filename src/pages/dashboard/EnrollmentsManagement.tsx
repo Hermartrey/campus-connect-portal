@@ -8,9 +8,11 @@ import { Student } from '@/types/auth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export default function EnrollmentsManagement() {
-  const { students, updateStudentStatus } = useStudents();
+  const { students, updateStudentStatus, isEnrollmentOpen, toggleEnrollment } = useStudents();
   const { toast } = useToast();
   const { addNotification } = useNotifications();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -202,6 +204,16 @@ export default function EnrollmentsManagement() {
         <div>
           <h2 className="text-2xl font-bold text-foreground">Enrollment Management</h2>
           <p className="text-muted-foreground">Review and process enrollment applications</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="enrollment-toggle"
+            checked={isEnrollmentOpen}
+            onCheckedChange={toggleEnrollment}
+          />
+          <Label htmlFor="enrollment-toggle" className="cursor-pointer">
+            {isEnrollmentOpen ? 'Enrollment Open' : 'Enrollment Closed'}
+          </Label>
         </div>
       </div>
 
