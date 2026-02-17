@@ -8,6 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { DollarSign, TrendingUp, Clock, CheckCircle, Eye, Download, FileText, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/hooks/useNotifications';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 export default function PaymentsManagement() {
   const { students, confirmPayment, cancelPayment } = useStudents();
@@ -29,6 +32,11 @@ export default function PaymentsManagement() {
     amount: number;
     studentName: string;
   } | null>(null);
+
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
 
   const handleConfirmPayment = () => {
     if (confirmingPayment) {
@@ -106,7 +114,30 @@ export default function PaymentsManagement() {
       studentName: student.name,
       studentEmail: student.email,
     }))
+
   ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  // Filter Logic
+  const filteredPayments = allPayments.filter(payment => {
+    const matchesSearch =
+      payment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.studentEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
+
+    let matchesDate = true;
+    if (dateFilter.start) {
+      matchesDate = matchesDate && new Date(payment.date) >= new Date(dateFilter.start);
+    }
+    if (dateFilter.end) {
+      const endDate = new Date(dateFilter.end);
+      endDate.setHours(23, 59, 59, 999);
+      matchesDate = matchesDate && new Date(payment.date) <= endDate;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   const totalCollected = allPayments
     .filter(p => p.status === 'completed')
@@ -180,10 +211,62 @@ export default function PaymentsManagement() {
         <CardHeader>
           <CardTitle>Payment History</CardTitle>
           <CardDescription>All student payment transactions</CardDescription>
+
+          {/* Filters UI */}
+          <div className="flex flex-col md:flex-row gap-4 mt-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search student, email, or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="w-full md:w-[200px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                placeholder="Start Date"
+                value={dateFilter.start}
+                onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
+                className="w-full md:w-auto"
+              />
+              <Input
+                type="date"
+                placeholder="End Date"
+                value={dateFilter.end}
+                onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
+                className="w-full md:w-auto"
+              />
+            </div>
+            {(searchTerm || statusFilter !== 'all' || dateFilter.start || dateFilter.end) && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                  setDateFilter({ start: '', end: '' });
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          {allPayments.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No payments recorded yet.</p>
+          {filteredPayments.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No payments found matching your filters.</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -199,7 +282,7 @@ export default function PaymentsManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allPayments.map((payment) => (
+                  {filteredPayments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell>
                         <div>
