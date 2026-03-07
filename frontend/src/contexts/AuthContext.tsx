@@ -6,6 +6,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   signup: (email: string, password: string, name: string, role: 'student' | 'admin') => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  updateProfile: (name: string, email: string) => Promise<{ success: boolean; error?: string }>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
 }
 
@@ -100,8 +102,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  const updateProfile = async (name: string, email: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    
+    // Check if email belongs to someone else
+    if (email !== user.email && users.some((u: User) => u.email === email && u.id !== user.id)) {
+      return { success: false, error: 'Email already in use' };
+    }
+
+    const updatedUsers = users.map((u: any) => {
+      if (u.id === user.id) {
+        return { ...u, name, email };
+      }
+      return u;
+    });
+
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+    
+    const updatedUser = { ...user, name, email };
+    setUser(updatedUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+
+    return { success: true };
+  };
+
+  const changePassword = async (oldPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const currentUserIndex = users.findIndex((u: any) => u.id === user.id);
+    
+    if (currentUserIndex === -1) return { success: false, error: 'User not found' };
+    
+    if (users[currentUserIndex].password !== oldPassword) {
+      return { success: false, error: 'Incorrect old password' };
+    }
+
+    users[currentUserIndex].password = newPassword;
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    return { success: true };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, changePassword, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

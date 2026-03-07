@@ -15,6 +15,7 @@ import DashboardPayments from "./pages/DashboardPayments";
 import DashboardStudentEnrollment from "./pages/DashboardStudentEnrollment";
 import DashboardStudentPayments from "./pages/DashboardStudentPayments";
 import DashboardStudentDetails from "./pages/DashboardStudentDetails";
+import DashboardStudentProfile from "./pages/DashboardStudentProfile";
 import DashboardTuition from "./pages/DashboardTuition";
 import DashboardFinancialStatus from "./pages/DashboardFinancialStatus";
 import DashboardTransactions from "./pages/DashboardTransactions";
@@ -107,6 +108,14 @@ const App = () => (
             />
 
             {/* Student Routes */}
+            <Route
+              path="/dashboard/profile"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <DashboardStudentProfile />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard/enrollment"
               element={

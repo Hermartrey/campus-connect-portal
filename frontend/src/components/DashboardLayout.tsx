@@ -14,7 +14,8 @@ import {
   DollarSign,
   Bell,
   Wallet,
-  History
+  History,
+  UserCircle
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -56,6 +57,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
       { icon: FileText, label: 'Enrollment', path: '/dashboard/enrollment' },
       { icon: CreditCard, label: 'Payments', path: '/dashboard/my-payments' },
+      { icon: UserCircle, label: 'Profile Settings', path: '/dashboard/profile' },
     ];
 
   return (
