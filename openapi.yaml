@@ -1,0 +1,541 @@
+openapi: 3.0.0
+info:
+  title: Campus Connect Portal API
+  description: API specification for the Campus Connect Portal backend based on frontend requirements.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+
+paths:
+  # --- Authentication ---
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+
+  /auth/signup:
+    post:
+      summary: Register new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                name: { type: string }
+                role: { type: string, enum: [student, admin] }
+      responses:
+        '201':
+          description: User created
+        '409':
+          description: Email already exists
+
+  /auth/profile:
+    put:
+      summary: Update user profile
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+      responses:
+        '200':
+          description: Profile updated
+
+  /auth/password:
+    put:
+      summary: Change user password
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword: { type: string }
+                newPassword: { type: string }
+      responses:
+        '200':
+          description: Password changed
+
+  # --- Students ---
+  /students:
+    get:
+      summary: List all students
+      tags: [Students]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Student'
+
+  /students/{studentId}:
+    get:
+      summary: Get student by ID
+      tags: [Students]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Student object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+    delete:
+      summary: Delete a student
+      tags: [Students]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Student deleted
+
+  /students/{studentId}/status:
+    put:
+      summary: Update student enrollment status
+      tags: [Students]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/EnrollmentStatus'
+      responses:
+        '200':
+          description: Status updated
+
+  /students/{studentId}/enroll:
+    post:
+      summary: Submit student enrollment
+      tags: [Students]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentFormData'
+      responses:
+        '200':
+          description: Enrollment submitted
+
+  /students/{studentId}/enrollment-data:
+    put:
+      summary: Update partial enrollment data
+      tags: [Students]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentFormData'
+      responses:
+        '200':
+          description: Data updated
+
+  /students/{studentId}/balance:
+    put:
+      summary: Update tuition balance manually
+      tags: [Students]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newBalance: { type: number }
+      responses:
+        '200':
+          description: Balance updated
+
+  /students/{studentId}/reset-enrollment:
+    post:
+      summary: Reset a student's enrollment status
+      tags: [Students]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Enrollment reset
+
+  /students/reset-all-enrollments:
+    post:
+      summary: Reset enrollment for all students
+      tags: [Students]
+      responses:
+        '200':
+          description: All enrollments reset
+
+  # --- Payments ---
+  /students/{studentId}/payments:
+    post:
+      summary: Add a new payment for a student
+      tags: [Payments]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+      responses:
+        '200':
+          description: Payment added
+
+  /students/{studentId}/payments/{paymentId}/confirm:
+    put:
+      summary: Confirm a pending payment
+      tags: [Payments]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment confirmed
+
+  /students/{studentId}/payments/{paymentId}/cancel:
+    put:
+      summary: Cancel a pending payment
+      tags: [Payments]
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment canceled
+
+  # --- Settings/Tuition ---
+  /settings/enrollment:
+    get:
+      summary: Get enrollment phase status
+      tags: [Settings]
+      responses:
+        '200':
+          description: Enrollment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isOpen: { type: boolean }
+    put:
+      summary: Toggle enrollment phase
+      tags: [Settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isOpen: { type: boolean }
+      responses:
+        '200':
+          description: Status toggled
+
+  /tuition/config:
+    get:
+      summary: Get tuition configurations
+      tags: [Tuition]
+      responses:
+        '200':
+          description: Tuition config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TuitionConfig'
+    put:
+      summary: Update tuition rate for a grade
+      tags: [Tuition]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TuitionRate'
+      responses:
+        '200':
+          description: Rate updated
+
+  # --- Notifications ---
+  /notifications:
+    get:
+      summary: Get notifications for a user
+      tags: [Notifications]
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+    post:
+      summary: Create a notification
+      tags: [Notifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      responses:
+        '201':
+          description: Notification created
+    delete:
+      summary: Clear user's notifications
+      tags: [Notifications]
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Notifications cleared
+
+  /notifications/{notificationId}/read:
+    put:
+      summary: Mark notification as read
+      tags: [Notifications]
+      parameters:
+        - in: path
+          name: notificationId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /notifications/read-all:
+    put:
+      summary: Mark all notifications as read for user
+      tags: [Notifications]
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: All notifications marked as read
+
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserRole:
+      type: string
+      enum: [student, admin]
+
+    EnrollmentStatus:
+      type: string
+      enum: [not_enrolled, pending, approved, rejected]
+
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string }
+        role: { $ref: '#/components/schemas/UserRole' }
+        createdAt: { type: string, format: date-time }
+
+    AuthResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        user: { $ref: '#/components/schemas/User' }
+        token: { type: string }
+
+    Student:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            enrollmentStatus: { $ref: '#/components/schemas/EnrollmentStatus' }
+            enrollmentData: { $ref: '#/components/schemas/EnrollmentFormData' }
+            enrollmentSubmittedAt: { type: string, format: date-time }
+            gradeLevel: { type: string }
+            tuitionBalance: { type: number }
+            payments:
+              type: array
+              items: { $ref: '#/components/schemas/Payment' }
+
+    EnrollmentFormData:
+      type: object
+      # Based on types/auth.ts
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        dateOfBirth: { type: string }
+        gender: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        zipCode: { type: string }
+        phone: { type: string }
+        primarySchool: { type: string }
+        gradeLevel: { type: string }
+        strand: { type: string }
+        guardianName: { type: string }
+        guardianRelationship: { type: string }
+        guardianPhone: { type: string }
+        guardianEmail: { type: string }
+        paymentMethod: { type: string, enum: [online, onsite] }
+        paymentAmount: { type: number }
+        paymentStatus: { type: string, enum: [pending, completed] }
+        paymentReceipt: { type: string }
+
+    Payment:
+      type: object
+      properties:
+        id: { type: string }
+        amount: { type: number }
+        date: { type: string, format: date-time }
+        status: { type: string, enum: [pending, completed, failed, cancelled] }
+        description: { type: string }
+        receipt: { type: string }
+        receiptName: { type: string }
+        type: { type: string, enum: [payment, adjustment] }
+        adjustmentType: { type: string, enum: [credit, debit] }
+
+    TuitionRate:
+      type: object
+      properties:
+        gradeLevel: { type: string }
+        amount: { type: number }
+
+    TuitionConfig:
+      type: object
+      properties:
+        rates:
+          type: array
+          items: { $ref: '#/components/schemas/TuitionRate' }
+        lastUpdated: { type: string, format: date-time }
+
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        title: { type: string }
+        message: { type: string }
+        type: { type: string, enum: [info, success, warning, error] }
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        link: { type: string }
+

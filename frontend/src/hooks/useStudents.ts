@@ -1,293 +1,160 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Student, Payment, EnrollmentFormData } from '@/types/auth';
 import { useNotifications } from '@/hooks/useNotifications';
-
-const USERS_KEY = 'school_users';
-const SETTINGS_KEY = 'system_settings';
+import api from '@/lib/api';
 
 export function useStudents() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isEnrollmentOpen, setIsEnrollmentOpen] = useState(true);
   const { addNotification } = useNotifications();
 
-  const loadStudents = () => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const studentList = users.filter((u: any) => u.role === 'student').map(({ password, ...s }: any) => s);
-    setStudents(studentList);
-
-    const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-    setIsEnrollmentOpen(settings.enrollmentOpen !== false); // Default to true
-  };
+  const loadStudents = useCallback(async () => {
+    try {
+      const res = await api.get('/students');
+      setStudents(res.data);
+      
+      const resSettings = await api.get('/settings/enrollment');
+      setIsEnrollmentOpen(resSettings.data.isOpen);
+    } catch (error) {
+      console.error("Failed to load students", error);
+    }
+  }, []);
 
   useEffect(() => {
     loadStudents();
-  }, []);
+  }, [loadStudents]);
 
-  const updateStudentStatus = (studentId: string, status: 'pending' | 'approved' | 'rejected') => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.id === studentId) {
-        const updates: any = { enrollmentStatus: status };
-        // Set tuition balance when approved based on grade level
-        if (status === 'approved') {
-          // Get tuition config from localStorage
-          const tuitionConfigStr = localStorage.getItem('tuition_config');
-          let tuitionAmount = 5000; // default fallback
-
-          if (tuitionConfigStr) {
-            try {
-              const tuitionConfig = JSON.parse(tuitionConfigStr);
-              const gradeLevel = u.enrollmentData?.gradeLevel || u.gradeLevel;
-              const rate = tuitionConfig.rates?.find((r: any) => r.gradeLevel === gradeLevel);
-              if (rate) {
-                tuitionAmount = rate.amount;
-              }
-            } catch (e) {
-              console.error('Error parsing tuition config:', e);
-            }
-          }
-
-          // Deduct upfront payment
-          const upfrontPayment = u.enrollmentData?.paymentAmount || 0;
-          updates.tuitionBalance = Math.max(0, tuitionAmount - upfrontPayment);
-
-          // Add upfront payment to payment history if paid online
-          if (upfrontPayment > 0) {
-            const upfrontRecord: Payment = {
-              id: `upfront-${Date.now()}`,
-              amount: upfrontPayment,
-              date: new Date().toISOString(),
-              status: 'completed',
-              description: 'Upfront Enrollment Payment',
-              receipt: u.enrollmentData?.paymentReceipt,
-              receiptName: u.enrollmentData?.paymentReceiptName,
-            };
-            updates.payments = [...(u.payments || []), upfrontRecord];
-          }
-        }
-        return { ...u, ...updates };
-      }
-      return u;
-    });
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
+  const updateStudentStatus = async (studentId: string, status: 'pending' | 'approved' | 'rejected') => {
+    try {
+      await api.put(`/students/${studentId}/status`, { status });
+      // The backend automatically adjusts payment/tuition balances, so we just reload.
+      await loadStudents();
+    } catch (e) {
+      console.error("Error updating status", e);
+    }
   };
 
-  const submitEnrollment = (studentId: string, enrollmentData: EnrollmentFormData) => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.id === studentId) {
-        return {
-          ...u,
-          enrollmentStatus: 'pending',
-          enrollmentData,
-          enrollmentSubmittedAt: new Date().toISOString(),
-          gradeLevel: enrollmentData.gradeLevel,
-        };
-      }
-      return u;
-    });
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
+  const submitEnrollment = async (studentId: string, enrollmentData: EnrollmentFormData) => {
+    try {
+      await api.post(`/students/${studentId}/enroll`, enrollmentData);
+      await loadStudents();
+    } catch (e) {
+      console.error("Error submitting enrollment", e);
+    }
   };
 
-  const updateStudentData = (studentId: string, data: Partial<EnrollmentFormData>) => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.id === studentId) {
-        return {
-          ...u,
-          enrollmentData: { ...u.enrollmentData, ...data },
-        };
-      }
-      return u;
-    });
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
+  const updateStudentData = async (studentId: string, data: Partial<EnrollmentFormData>) => {
+    try {
+      await api.put(`/students/${studentId}/enrollment-data`, data);
+      await loadStudents();
+    } catch (e) {
+      console.error("Error updating student data", e);
+    }
   };
 
-  const addPayment = (studentId: string, payment: Omit<Payment, 'id'>) => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.id === studentId) {
-        const newPayment = { ...payment, id: `payment-${Date.now()}` };
-        const newBalance = payment.status === 'completed' ? u.tuitionBalance - payment.amount : u.tuitionBalance;
-        return {
-          ...u,
-          payments: [...(u.payments || []), newPayment],
-          tuitionBalance: Math.max(0, newBalance),
-        };
-      }
-      return u;
-    });
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
+  const addPayment = async (studentId: string, payment: Omit<Payment, 'id'>) => {
+    try {
+       // Backend handles appending id and creating the structure.
+      await api.post(`/students/${studentId}/payments`, payment);
+      await loadStudents();
+    } catch (e) {
+      console.error("Error adding payment", e);
+    }
   };
 
   const getStudentById = (studentId: string): Student | undefined => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const student = users.find((u: any) => u.id === studentId && u.role === 'student');
-    if (student) {
-      const { password, ...s } = student;
-      return s;
+    return students.find((u) => u.id === studentId);
+  };
+
+  const refreshCurrentStudent = async (studentId: string): Promise<Student | undefined> => {
+    try {
+      const res = await api.get(`/students/${studentId}`);
+      // Also silently updates list cache to stay fresh
+      setStudents(prev => prev.map(s => s.id === studentId ? res.data : s));
+      return res.data;
+    } catch (e) {
+      console.error("Error fetching single student", e);
+      return undefined;
     }
-    return undefined;
   };
 
-  const refreshCurrentStudent = (studentId: string): Student | undefined => {
-    return getStudentById(studentId);
+  const confirmPayment = async (studentId: string, paymentId: string) => {
+    try {
+      await api.put(`/students/${studentId}/payments/${paymentId}/confirm`);
+      await loadStudents();
+    } catch (e) {
+      console.error("Error confirming payment", e);
+    }
+  };
+  
+  const cancelPayment = async (studentId: string, paymentId: string) => {
+    try {
+      await api.put(`/students/${studentId}/payments/${paymentId}/cancel`);
+      await loadStudents();
+    } catch (e) {
+      console.error("Error cancelling payment", e);
+    }
   };
 
-  const confirmPayment = (studentId: string, paymentId: string) => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.id === studentId) {
-        // Find the payment to confirm
-        const paymentToConfirm = u.payments?.find((p: Payment) => p.id === paymentId);
-
-        if (paymentToConfirm && paymentToConfirm.status === 'pending') {
-          // Update payment status
-          const updatedPayments = u.payments.map((p: Payment) => {
-            if (p.id === paymentId) {
-              return { ...p, status: 'completed' as const };
-            }
-            return p;
-          });
-
-          // Deduct balance
-          const newBalance = Math.max(0, u.tuitionBalance - paymentToConfirm.amount);
-
-          return {
-            ...u,
-            payments: updatedPayments,
-            tuitionBalance: newBalance,
-          };
-        }
-      }
-      return u;
-    });
-
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
-  };
-  const cancelPayment = (studentId: string, paymentId: string) => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.id === studentId) {
-        // Find the payment to cancel
-        const paymentToCancel = u.payments?.find((p: Payment) => p.id === paymentId);
-
-        if (paymentToCancel && paymentToCancel.status === 'pending') {
-          // Update payment status
-          const updatedPayments = u.payments.map((p: Payment) => {
-            if (p.id === paymentId) {
-              return { ...p, status: 'cancelled' as const };
-            }
-            return p;
-          });
-
-          return {
-            ...u,
-            payments: updatedPayments,
-          };
-        }
-      }
-      return u;
-    });
-
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
+  const deleteStudent = async (studentId: string) => {
+    try {
+      await api.delete(`/students/${studentId}`);
+      await loadStudents();
+    } catch (e) {
+      console.error("Error deleting student", e);
+    }
   };
 
-  const deleteStudent = (studentId: string) => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.filter((u: any) => u.id !== studentId);
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
-  };
-
-  const updateTuitionBalance = (studentId: string, newBalance: number) => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.id === studentId) {
-        // Calculate difference
-        const oldBalance = u.tuitionBalance || 0;
-
-        // Only record if changed
-        if (oldBalance !== newBalance) {
-          const diff = newBalance - oldBalance;
-          // Determine if it looks like a credit (balance reduced) or debit (balance increased)
-          const isCredit = diff < 0; // Balance went DOWN (e.g., 5000 -> 4000) = Credit (Payment like)
-
-          const adjustmentRecord: Payment = {
-            id: `adj-${Date.now()}`,
-            amount: Math.abs(diff),
-            date: new Date().toISOString(),
-            status: 'completed',
-            description: `Manual Adjustment: ${oldBalance.toLocaleString()} -> ${newBalance.toLocaleString()}`,
-            type: 'adjustment',
-            adjustmentType: isCredit ? 'credit' : 'debit'
-          };
-
-          // Notify the student
+  const updateTuitionBalance = async (studentId: string, newBalance: number) => {
+    try {
+      // Find current balance just to send the client-side notification if needed
+      const student = getStudentById(studentId);
+      if (student && student.tuitionBalance !== newBalance) {
+          const diff = newBalance - student.tuitionBalance;
+          const isCredit = diff < 0; // Balance went DOWN
+          
           addNotification({
-            userId: studentId,
-            title: 'Balance Adjusted',
-            message: `Your tuition balance has been adjusted. ${isCredit ? 'Credit' : 'Debit'}: $${Math.abs(diff).toLocaleString()}. Reason: Manual Adjustment.`,
-            type: 'info',
-            link: '/dashboard/payments'
+              userId: studentId,
+              title: 'Balance Adjusted',
+              message: `Your tuition balance has been adjusted. ${isCredit ? 'Credit' : 'Debit'}: $${Math.abs(diff).toLocaleString()}. Reason: Manual Adjustment.`,
+              type: 'info',
+              link: '/dashboard/payments'
           });
-
-          return {
-            ...u,
-            tuitionBalance: newBalance,
-            payments: [...(u.payments || []), adjustmentRecord]
-          };
-        }
-
-        return u;
       }
-      return u;
-    });
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
+
+      await api.put(`/students/${studentId}/balance`, { newBalance });
+      await loadStudents();
+    } catch (e) {
+      console.error("Error updating balance", e);
+    }
   };
 
-  const resetEnrollment = (studentId: string) => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.id === studentId) {
-        return {
-          ...u,
-          enrollmentStatus: 'not_enrolled',
-          enrollmentData: undefined,
-          enrollmentSubmittedAt: undefined,
-        };
-      }
-      return u;
-    });
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
+  const resetEnrollment = async (studentId: string) => {
+    try {
+      await api.post(`/students/${studentId}/reset-enrollment`);
+      await loadStudents();
+    } catch (e) {
+      console.error("Error resetting enrollment", e);
+    }
   };
 
-  const resetAllEnrollments = () => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = users.map((u: any) => {
-      if (u.role === 'student') {
-        return {
-          ...u,
-          enrollmentStatus: 'not_enrolled',
-          // Keep enrollmentData to detect returning students
-          // We might want to clear specific fields if needed, but keeping it allows pre-filling.
-          // The critical part is checking if enrollmentData exists in the UI to trigger the shortened flow.
-          enrollmentSubmittedAt: undefined,
-        };
-      }
-      return u;
-    });
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    loadStudents();
+  const resetAllEnrollments = async () => {
+    try {
+      await api.post(`/students/reset-all-enrollments`);
+      await loadStudents();
+    } catch (e) {
+      console.error("Error resetting all enrollments", e);
+    }
   };
+
+  const toggleEnrollment = async (isOpen: boolean) => {
+    try {
+      await api.put(`/settings/enrollment`, { isOpen });
+      setIsEnrollmentOpen(isOpen);
+    } catch (e) {
+       console.error("Error toggling enrollment", e);
+    }
+  }
 
   return {
     students,
@@ -304,12 +171,7 @@ export function useStudents() {
     resetEnrollment,
     resetAllEnrollments,
     isEnrollmentOpen,
-    toggleEnrollment: (isOpen: boolean) => {
-      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-      const newSettings = { ...settings, enrollmentOpen: isOpen };
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
-      setIsEnrollmentOpen(isOpen);
-    },
+    toggleEnrollment,
     refresh: loadStudents,
   };
 }
