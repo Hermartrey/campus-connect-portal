@@ -14,7 +14,7 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signup } = useAuth();
+  const { signup, login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -44,11 +44,21 @@ export default function Signup() {
     const result = await signup(email, password, name, 'student');
 
     if (result.success) {
-      toast({
-        title: 'Account created!',
-        description: 'Welcome to EduPortal Academy.',
-      });
-      navigate('/dashboard');
+      // Auto-login after signup so the user context is populated before navigating
+      const loginResult = await login(email, password);
+      if (loginResult.success) {
+        toast({
+          title: 'Account created!',
+          description: 'Welcome to EduPortal Academy.',
+        });
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: 'Account created! Please sign in.',
+          description: 'Your account was created. Please log in to continue.',
+        });
+        navigate('/login');
+      }
     } else {
       toast({
         title: 'Sign up failed',
