@@ -18,7 +18,7 @@ def test_admin_seeded_on_startup(client):
     assert data["user"]["email"] == "admin@school.com"
 
 
-def test_student_signup_creates_account(client):
+def test_student_signup_creates_account_and_requires_verification(client):
     r = client.post("/api/auth/signup", json={
         "email": "new@test.com",
         "password": "secure123",
@@ -27,6 +27,27 @@ def test_student_signup_creates_account(client):
     })
     assert r.status_code == 201
 
+    # Login should fail because of verification
+    r_fail = client.post("/api/auth/login", json={
+        "email": "new@test.com", "password": "secure123"
+    })
+    assert r_fail.status_code == 403
+
+    # Grab token and verify
+    from tests_integration.conftest import TestingSessionLocal
+    from db.models import PendingRegistrationRow
+    db = TestingSessionLocal()
+    pending = db.query(PendingRegistrationRow).filter(PendingRegistrationRow.email == "new@test.com").first()
+    token = pending.verification_token
+    db.close()
+
+    r_verify = client.post("/api/auth/verify-code", json={"email": "new@test.com", "code": token})
+    assert r_verify.status_code == 200
+    verify_data = r_verify.json()
+    assert verify_data["success"] is True
+    assert verify_data["user"]["role"] == "student"
+
+    # Login should succeed
     data = login(client, "new@test.com", "secure123")
     assert data["success"] is True
     assert data["user"]["role"] == "student"

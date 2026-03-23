@@ -83,6 +83,19 @@ def signup_student(client, email="student@test.com", password="pw1234", name="Te
                                                "name": name, "role": "student"})
     assert r.status_code == 201
 
+    # Auto-verify the user so subsequent tests function normally
+    from db.models import PendingRegistrationRow
+    db = TestingSessionLocal()
+    try:
+        pending = db.query(PendingRegistrationRow).filter(PendingRegistrationRow.email == email).first()
+        if pending:
+            token = pending.verification_token
+    finally:
+        db.close()
+        
+    if pending:
+        client.post("/api/auth/verify-code", json={"email": email, "code": token})
+
 
 def login(client, email, password):
     r = client.post("/api/auth/login", json={"email": email, "password": password})

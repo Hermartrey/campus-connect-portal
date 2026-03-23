@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   signup: (email: string, password: string, name: string, role: 'student' | 'admin') => Promise<{ success: boolean; error?: string }>;
+  verifyCode: (email: string, code: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
   updateProfile: (name: string, email: string) => Promise<{ success: boolean; error?: string }>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true, user };
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-         return { success: false, error: 'Invalid email or password' };
+         return { success: false, error: error.response.data.detail || 'Invalid email or password' };
       }
       return { success: false, error: 'An unexpected error occurred' };
     }
@@ -60,6 +61,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: 'Email already exists' };
       }
       return { success: false, error: 'Failed to register account' };
+    }
+  };
+
+  const verifyCode = async (email: string, code: string): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      const response = await api.post('/auth/verify-code', { email, code });
+      const { user, token } = response.data;
+      
+      setUser(user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ user, token }));
+      return { success: true, user };
+    } catch (error) {
+       if (axios.isAxiosError(error) && error.response) {
+         return { success: false, error: error.response.data.detail || 'Invalid verification code' };
+       }
+       return { success: false, error: 'Failed to verify code' };
     }
   };
 
@@ -110,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, changePassword, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, verifyCode, logout, updateProfile, changePassword, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

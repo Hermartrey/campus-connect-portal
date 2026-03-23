@@ -44,21 +44,11 @@ export default function Signup() {
     const result = await signup(email, password, name, 'student');
 
     if (result.success) {
-      // Auto-login after signup so the user context is populated before navigating
-      const loginResult = await login(email, password);
-      if (loginResult.success) {
-        toast({
-          title: 'Account created!',
-          description: 'Welcome to EduPortal Academy.',
-        });
-        navigate('/dashboard');
-      } else {
-        toast({
-          title: 'Account created! Please sign in.',
-          description: 'Your account was created. Please log in to continue.',
-        });
-        navigate('/login');
-      }
+      toast({
+        title: 'Account created! Please verify your email.',
+        description: 'We have sent a verification code to your email. Please verify before signing in.',
+      });
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } else {
       toast({
         title: 'Sign up failed',

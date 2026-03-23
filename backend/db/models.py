@@ -20,6 +20,18 @@ class Base(DeclarativeBase):
     pass
 
 
+class PendingRegistrationRow(Base):
+    __tablename__ = "pending_registrations"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String, unique=True, nullable=False, index=True)
+    name = Column(String, nullable=False)
+    role = Column(Enum("student", "admin", name="user_role"), nullable=False)
+    password = Column(String, nullable=False)
+    verification_token = Column(String, nullable=False)
+    created_at = Column(DateTime, default=utcnow)
+
+
 class UserRow(Base):
     __tablename__ = "users"
 
