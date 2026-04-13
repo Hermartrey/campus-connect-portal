@@ -10,4 +10,4 @@ cd ..
 
 echo "Setting up backend..."
 cd backend
-pip install .
+pip install -r requirements.txt
