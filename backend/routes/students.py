@@ -51,7 +51,7 @@ def _row_to_student(student: StudentRow) -> Student:
     )
 
 
-@router.get("/", response_model=List[Student])
+@router.get("", response_model=List[Student])
 def list_students(db: Session = Depends(get_db)):
     students = db.query(StudentRow).all()
     return [_row_to_student(s) for s in students]

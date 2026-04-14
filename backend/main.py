@@ -88,6 +88,11 @@ if STATIC_DIR.exists():
         SPA catch-all: serve the file if it exists in the static build,
         otherwise return index.html so React Router can handle client-side routes.
         """
+        # Exclude API routes from the SPA catch-all
+        if full_path.startswith("api/"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="API route not found")
+
         file_path = STATIC_DIR / full_path
         if file_path.is_file():
             return FileResponse(file_path)
