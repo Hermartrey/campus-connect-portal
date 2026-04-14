@@ -218,7 +218,7 @@ export default function StudentsManagement() {
                         {student.gradeLevel || student.enrollmentData?.gradeLevel || '-'}
                       </TableCell>
                       <TableCell>{getStatusBadge(student.enrollmentStatus)}</TableCell>
-                      <TableCell>${student.tuitionBalance?.toLocaleString() || 0}</TableCell>
+                      <TableCell>₱{student.tuitionBalance?.toLocaleString() || 0}</TableCell>
                       <TableCell>{new Date(student.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2 items-center" onClick={(e) => e.stopPropagation()}>

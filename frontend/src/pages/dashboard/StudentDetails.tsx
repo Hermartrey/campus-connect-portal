@@ -336,7 +336,7 @@ export default function StudentDetails() {
                                 {isEditing || isEditingBalance ? (
                                     <div className="mt-1 space-y-2">
                                         <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">₱</span>
                                             <Input
                                                 type="number"
                                                 value={editableBalance}
@@ -369,7 +369,7 @@ export default function StudentDetails() {
                                     </div>
                                 ) : (
                                     <p className="text-2xl font-bold text-primary">
-                                        ${student.tuitionBalance?.toLocaleString() || '0.00'}
+                                        ₱{student.tuitionBalance?.toLocaleString() || '0.00'}
                                     </p>
                                 )}
                             </div>
@@ -407,7 +407,7 @@ export default function StudentDetails() {
                                         {student.payments.slice(0, 5).map((payment) => (
                                             <div key={payment.id} className="flex justify-between items-center p-2 bg-muted/50 rounded text-sm">
                                                 <span>{new Date(payment.date).toLocaleDateString()}</span>
-                                                <span className="font-medium">${payment.amount.toLocaleString()}</span>
+                                                <span className="font-medium">₱{payment.amount.toLocaleString()}</span>
                                             </div>
                                         ))}
                                     </div>

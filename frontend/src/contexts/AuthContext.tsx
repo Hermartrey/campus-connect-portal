@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   signup: (email: string, password: string, name: string, role: 'student' | 'admin') => Promise<{ success: boolean; error?: string }>;
   verifyCode: (email: string, code: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  resendVerificationCode: (email: string) => Promise<{ success: boolean; error?: string; message?: string }>;
   logout: () => void;
   updateProfile: (name: string, email: string) => Promise<{ success: boolean; error?: string }>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
@@ -80,6 +81,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resendVerificationCode = async (email: string): Promise<{ success: boolean; error?: string; message?: string }> => {
+    try {
+      const response = await api.post('/auth/resend-code', { email });
+      return { success: true, message: response.data.message };
+    } catch (error) {
+       if (axios.isAxiosError(error) && error.response) {
+         return { success: false, error: error.response.data.detail || 'Failed to resend code' };
+       }
+       return { success: false, error: 'Failed to resend code' };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem(STORAGE_KEY);
@@ -127,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, verifyCode, logout, updateProfile, changePassword, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, verifyCode, resendVerificationCode, logout, updateProfile, changePassword, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

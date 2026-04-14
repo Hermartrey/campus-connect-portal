@@ -6,13 +6,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Student } from '@/types/auth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useTuition } from '@/hooks/useTuition';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
 export default function EnrollmentsManagement() {
-  const { students, updateStudentStatus, isEnrollmentOpen, toggleEnrollment } = useStudents();
+  const { students, updateStudentStatus, isEnrollmentOpen, toggleEnrollment, updateTuitionBalance, addPayment } = useStudents();
+  const { getTuitionForGrade } = useTuition();
   const { toast } = useToast();
   const { addNotification } = useNotifications();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -27,8 +29,31 @@ export default function EnrollmentsManagement() {
 
   const pendingStudents = students.filter(s => s.enrollmentStatus === 'pending' && s.enrollmentData);
 
-  const handleStatusUpdate = (studentId: string, status: 'approved' | 'rejected') => {
-    updateStudentStatus(studentId, status);
+  const handleStatusUpdate = async (studentId: string, status: 'approved' | 'rejected') => {
+    if (status === 'approved' && pendingAction?.student?.enrollmentData) {
+      const data = pendingAction.student.enrollmentData;
+      const fullTuition = getTuitionForGrade(data.gradeLevel || '');
+      const upfront = data.paymentMethod === 'online' ? (data.paymentAmount || 0) : 0;
+      const outstanding = Math.max(0, fullTuition - upfront);
+
+      // Create completed payment record for upfront payment
+      if (upfront > 0) {
+        await addPayment(studentId, {
+          amount: upfront,
+          date: new Date().toISOString(),
+          status: 'completed',
+          description: 'Upfront Enrollment Payment',
+          receipt: data.paymentReceipt,
+          receiptName: data.paymentReceiptName,
+          type: 'payment'
+        });
+      }
+
+      // Initialize the tuition balance
+      await updateTuitionBalance(studentId, outstanding);
+    }
+
+    await updateStudentStatus(studentId, status);
     addNotification({
       userId: studentId,
       title: `Enrollment ${status === 'approved' ? 'Approved' : 'Returned/Rejected'}`,

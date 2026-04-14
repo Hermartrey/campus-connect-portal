@@ -5,13 +5,13 @@ import uuid
 
 from db.deps import get_db
 from db.models import StudentRow, PaymentRow
-from models.models import Payment, PaymentStatus
+from models.models import Payment, PaymentCreate, PaymentStatus
 
 router = APIRouter()
 
 
 @router.post("/{student_id}/payments")
-def add_payment(student_id: str, payment: Payment, db: Session = Depends(get_db)):
+def add_payment(student_id: str, payment: PaymentCreate, db: Session = Depends(get_db)):
     student = db.query(StudentRow).filter(StudentRow.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")

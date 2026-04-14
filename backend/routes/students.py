@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from db.deps import get_db
-from db.models import UserRow, StudentRow, PaymentRow
+from db.models import UserRow, StudentRow, PaymentRow, TuitionRateRow
 from models.models import Student, EnrollmentStatus, EnrollmentFormData, Payment, PaymentStatus, PaymentType, AdjustmentType
 
 router = APIRouter()
@@ -87,6 +87,15 @@ def update_status(student_id: str, request: StatusUpdateRequest, db: Session = D
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     student.enrollment_status = request.status.value
+
+    # When approving, automatically set tuition balance from tuition_rates table
+    if request.status.value == "approved" and student.grade_level:
+        rate = db.query(TuitionRateRow).filter(
+            TuitionRateRow.grade_level == student.grade_level
+        ).first()
+        if rate:
+            student.tuition_balance = rate.amount
+
     db.commit()
     return {"message": "Status updated"}
 

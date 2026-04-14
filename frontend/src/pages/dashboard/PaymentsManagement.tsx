@@ -38,35 +38,35 @@ export default function PaymentsManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
     if (confirmingPayment) {
-      confirmPayment(confirmingPayment.studentId, confirmingPayment.paymentId);
+      await confirmPayment(confirmingPayment.studentId, confirmingPayment.paymentId);
       addNotification({
         userId: confirmingPayment.studentId,
         title: 'Payment Confirmed',
-        message: `Your payment of $${confirmingPayment.amount.toLocaleString()} has been confirmed.`,
+        message: `Your payment of ₱${confirmingPayment.amount.toLocaleString()} has been confirmed.`,
         type: 'success',
       });
       toast({
         title: 'Payment confirmed',
-        description: `Payment of $${confirmingPayment.amount.toLocaleString()} has been processed.`,
+        description: `Payment of ₱${confirmingPayment.amount.toLocaleString()} has been processed.`,
       });
       setConfirmingPayment(null);
     }
   };
 
-  const handleCancelPayment = () => {
+  const handleCancelPayment = async () => {
     if (cancelingPayment) {
-      cancelPayment(cancelingPayment.studentId, cancelingPayment.paymentId);
+      await cancelPayment(cancelingPayment.studentId, cancelingPayment.paymentId);
       addNotification({
         userId: cancelingPayment.studentId,
         title: 'Payment Cancelled',
-        message: `Your payment of $${cancelingPayment.amount.toLocaleString()} has been cancelled by the admin.`,
+        message: `Your payment of ₱${cancelingPayment.amount.toLocaleString()} has been cancelled by the admin.`,
         type: 'error',
       });
       toast({
         title: 'Payment cancelled',
-        description: `Payment of $${cancelingPayment.amount.toLocaleString()} has been cancelled.`,
+        description: `Payment of ₱${cancelingPayment.amount.toLocaleString()} has been cancelled.`,
         variant: 'destructive',
       });
       setCancelingPayment(null);
@@ -168,7 +168,7 @@ export default function PaymentsManagement() {
           <CardContent>
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-success" />
-              <span className="text-2xl font-bold">${totalCollected.toLocaleString()}</span>
+              <span className="text-2xl font-bold">₱{totalCollected.toLocaleString()}</span>
             </div>
           </CardContent>
         </Card>
@@ -179,7 +179,7 @@ export default function PaymentsManagement() {
           <CardContent>
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-warning" />
-              <span className="text-2xl font-bold">${totalPending.toLocaleString()}</span>
+              <span className="text-2xl font-bold">₱{totalPending.toLocaleString()}</span>
             </div>
           </CardContent>
         </Card>
@@ -190,7 +190,7 @@ export default function PaymentsManagement() {
           <CardContent>
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
-              <span className="text-2xl font-bold">${totalOutstanding.toLocaleString()}</span>
+              <span className="text-2xl font-bold">₱{totalOutstanding.toLocaleString()}</span>
             </div>
           </CardContent>
         </Card>
@@ -291,7 +291,7 @@ export default function PaymentsManagement() {
                         </div>
                       </TableCell>
                       <TableCell>{payment.description}</TableCell>
-                      <TableCell className="font-medium">${payment.amount.toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">₱{payment.amount.toLocaleString()}</TableCell>
                       <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
                       <TableCell>
                         {payment.receipt ? (
@@ -350,7 +350,7 @@ export default function PaymentsManagement() {
                                 studentName: payment.studentName,
                               })}
                             >
-                              Cancel
+                              Reject
                             </Button>
                             <Button
                               size="sm"
@@ -361,7 +361,7 @@ export default function PaymentsManagement() {
                                 studentName: payment.studentName,
                               })}
                             >
-                              Confirm
+                              Approve
                             </Button>
                           </div>
                         )}
@@ -379,16 +379,16 @@ export default function PaymentsManagement() {
       <AlertDialog open={!!confirmingPayment} onOpenChange={() => setConfirmingPayment(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
+            <AlertDialogTitle>Approve Payment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to confirm this payment of ${confirmingPayment?.amount.toLocaleString()} from {confirmingPayment?.studentName}?
+              Are you sure you want to approve this payment of ₱{confirmingPayment?.amount.toLocaleString()} from {confirmingPayment?.studentName}?
               <br /><br />
               This will mark the payment as completed and deduct the amount from the student's outstanding balance.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmPayment}>Confirm</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmPayment}>Approve</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -397,17 +397,17 @@ export default function PaymentsManagement() {
       <AlertDialog open={!!cancelingPayment} onOpenChange={() => setCancelingPayment(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Payment</AlertDialogTitle>
+            <AlertDialogTitle>Reject Payment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel this payment of ${cancelingPayment?.amount.toLocaleString()} from {cancelingPayment?.studentName}?
+              Are you sure you want to reject this payment of ₱{cancelingPayment?.amount.toLocaleString()} from {cancelingPayment?.studentName}?
               <br /><br />
-              This will mark the payment as cancelled. This action cannot be undone.
+              This will mark the payment as rejected/cancelled. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>No, Keep it</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancelPayment} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Yes, Cancel Payment
+              Yes, Reject Payment
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

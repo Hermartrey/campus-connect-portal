@@ -47,11 +47,11 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
       return false;
     }
     if (amount < 500) {
-      setError('Minimum upfront payment is $500');
+      setError('Minimum upfront payment is ₱500');
       return false;
     }
     if (amount > gradeTuition) {
-      setError(`Maximum payment cannot exceed total tuition of $${gradeTuition.toLocaleString()}`);
+      setError(`Maximum payment cannot exceed total tuition of ₱${gradeTuition.toLocaleString()}`);
       return false;
     }
     setError(null);
@@ -123,13 +123,13 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
           <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Total Tuition ({data.gradeLevel})</span>
-              <span className="text-xl font-semibold">${gradeTuition.toLocaleString()}</span>
+              <span className="text-xl font-semibold">₱{gradeTuition.toLocaleString()}</span>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentAmount">Upfront Payment Amount ($)</Label>
+              <Label htmlFor="paymentAmount">Upfront Payment Amount (₱)</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₱</span>
                 <Input
                   id="paymentAmount"
                   type="number"
@@ -148,7 +148,7 @@ export default function StepPayment({ data, onUpdate, onBack, onSubmit }: StepPa
                 <p className="text-xs text-destructive font-medium">{error}</p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Minimum: $500 | Maximum: ${gradeTuition.toLocaleString()}
+                  Minimum: ₱500 | Maximum: ₱{gradeTuition.toLocaleString()}
                 </p>
               )}
             </div>

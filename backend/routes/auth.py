@@ -29,7 +29,9 @@ class VerifyCodeRequest(BaseModel):
     email: str
     code: str
 
-
+class ResendCodeRequest(BaseModel):
+    email: str
+    
 class ProfileUpdateRequest(BaseModel):
     name: str
     email: str
@@ -105,9 +107,10 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
 
 @router.post("/verify-code", response_model=AuthResponse)
 def verify_code(request: VerifyCodeRequest, db: Session = Depends(get_db)):
-    # Check if user already exists and is verified
+    # A UserRow existing means the account was already verified (pending row
+    # is deleted upon successful verification, so its presence = already done)
     user = db.query(UserRow).filter(UserRow.email == request.email).first()
-    if user and user.is_verified:
+    if user:
         raise HTTPException(status_code=400, detail="Email is already verified")
 
     pending = db.query(PendingRegistrationRow).filter(PendingRegistrationRow.email == request.email).first()
@@ -127,6 +130,7 @@ def verify_code(request: VerifyCodeRequest, db: Session = Depends(get_db)):
         name=pending.name,
         role=pending.role,
         password=pending.password,
+        is_verified=True,
         created_at=pending.created_at,
     )
     db.add(user)
@@ -150,6 +154,33 @@ def verify_code(request: VerifyCodeRequest, db: Session = Depends(get_db)):
         createdAt=user.created_at,
     )
     return {"success": True, "user": user_model, "token": f"mock-token-{user.id}"}
+
+
+@router.post("/resend-code")
+def resend_code(request: ResendCodeRequest, db: Session = Depends(get_db)):
+    pending = db.query(PendingRegistrationRow).filter(PendingRegistrationRow.email == request.email).first()
+    if not pending:
+        raise HTTPException(status_code=400, detail="No pending registration found for this email")
+
+    now = datetime.now(timezone.utc)
+    # Generate a new random 6-digit code
+    verification_token = f"{random.randint(100000, 999999)}"
+    
+    pending.verification_token = verification_token
+    pending.created_at = now
+    db.commit()
+
+    email_sent = send_verification_email(request.email, verification_token)
+
+    if not email_sent:
+        # Fallback to local console log if SMTP is unconfigured or fails
+        print(f"\n[{now}] === EMAIL VERIFICATION (RESEND) ===")
+        print(f"To: {request.email}")
+        print(f"Code: {verification_token}")
+        print("===============================\n")
+        return {"success": True, "message": "Verification code generated (fallback)."}
+
+    return {"success": True, "message": "Verification code resent."}
 
 
 @router.put("/profile")

@@ -201,7 +201,7 @@ export default function FinancialStatus() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-1 font-medium">
-                                                    <DollarSignIcon className="h-3 w-3 text-muted-foreground" />
+                                                    <span className="text-muted-foreground font-normal">₱</span>
                                                     {student.tuitionBalance?.toLocaleString() || '0'}
                                                 </div>
                                             </TableCell>

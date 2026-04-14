@@ -12,11 +12,12 @@ export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const emailParam = searchParams.get('email');
   const navigate = useNavigate();
-  const { verifyCode } = useAuth();
+  const { verifyCode, resendVerificationCode } = useAuth();
   const { toast } = useToast();
 
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   // If no email is provided in the URL, redirect to login
   if (!emailParam) {
@@ -53,6 +54,26 @@ export default function VerifyEmail() {
     }
   };
 
+  const handleResend = async () => {
+    setIsResending(true);
+    const result = await resendVerificationCode(emailParam);
+    if (result.success) {
+      toast({
+        title: 'Code resent!',
+        description: 'A new 6-digit code has been sent to your email.',
+      });
+      setCode('');
+    } else {
+      toast({
+        title: 'Failed to resend code',
+        description: result.error || 'An error occurred.',
+        variant: 'destructive',
+      });
+    }
+    setIsResending(false);
+  };
+
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-8">
       <Card className="w-full max-w-md text-center">
@@ -88,9 +109,22 @@ export default function VerifyEmail() {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Verify Account
             </Button>
-            <p className="text-sm text-muted-foreground">
-              Didn't receive a code? Check your spam folder or return to <Link to="/signup" className="text-primary hover:underline">sign up</Link>.
-            </p>
+            <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground mt-2">
+              <Button 
+                type="button" 
+                variant="link" 
+                onClick={handleResend} 
+                disabled={isResending}
+                className="h-auto p-0 font-normal"
+              >
+                {isResending ? (
+                  <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Sending...</>
+                ) : (
+                  "Didn't receive a code? Resend it"
+                )}
+              </Button>
+              <p>Or return to <Link to="/signup" className="text-primary hover:underline">sign up</Link>.</p>
+            </div>
           </CardFooter>
         </form>
       </Card>

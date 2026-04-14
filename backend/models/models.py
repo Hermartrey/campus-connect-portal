@@ -77,8 +77,7 @@ class EnrollmentFormData(BaseModel):
     paymentReceipt: Optional[str] = None
 
 
-class Payment(BaseModel):
-    id: str
+class PaymentCreate(BaseModel):
     amount: float
     date: datetime
     status: PaymentStatus
@@ -87,6 +86,10 @@ class Payment(BaseModel):
     receiptName: Optional[str] = None
     type: Optional[PaymentType] = None
     adjustmentType: Optional[AdjustmentType] = None
+
+
+class Payment(PaymentCreate):
+    id: str
 
 
 class Student(User):

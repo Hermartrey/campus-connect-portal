@@ -77,7 +77,7 @@ export default function EnrollmentWizard({ onSuccess, isReturning = false }: Enr
     }
   };
 
-  const handleSubmit = (latestData?: Partial<EnrollmentFormData>) => {
+  const handleSubmit = async (latestData?: Partial<EnrollmentFormData>) => {
     if (!user?.id) return;
 
     // Merge the latest data (from StepPayment) with formData
@@ -85,7 +85,7 @@ export default function EnrollmentWizard({ onSuccess, isReturning = false }: Enr
       ? { ...formData, ...latestData }
       : formData;
 
-    submitEnrollment(user.id, finalData as EnrollmentFormData);
+    await submitEnrollment(user.id, finalData as EnrollmentFormData);
     addNotification({
       userId: 'admin-1',
       title: isReturning ? 'Returning Student Enrollment' : 'New Enrollment Application',

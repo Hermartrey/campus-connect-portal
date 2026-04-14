@@ -75,7 +75,7 @@ export default function StudentDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Tuition Balance
+              Outstanding Balance
             </CardTitle>
             <CreditCard className="h-5 w-5 text-primary" />
           </CardHeader>
@@ -104,7 +104,7 @@ export default function StudentDashboard() {
               {studentData?.payments?.filter(p => p.status === 'completed').length || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Total: ${studentData?.payments?.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0).toLocaleString() || '0'}
+              Total: ₱{studentData?.payments?.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0).toLocaleString() || '0'}
             </p>
           </CardContent>
         </Card>
@@ -152,7 +152,7 @@ export default function StudentDashboard() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${payment.amount.toLocaleString()}</p>
+                    <p className="font-medium">₱{payment.amount.toLocaleString()}</p>
                     <span className={`text-xs ${payment.status === 'completed' ? 'text-success' : 'text-warning'
                       }`}>
                       {payment.status}

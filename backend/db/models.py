@@ -40,6 +40,7 @@ class UserRow(Base):
     name = Column(String, nullable=False)
     role = Column(Enum("student", "admin", name="user_role"), nullable=False)
     password = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=utcnow)
 
     # Relationship to student profile (one-to-one)

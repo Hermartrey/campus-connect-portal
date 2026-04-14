@@ -83,15 +83,6 @@ export default function StudentPayments() {
       return;
     }
 
-    if (paymentAmount > (studentData?.tuitionBalance || 0)) {
-      toast({
-        title: 'Amount exceeds balance',
-        description: 'Payment amount cannot exceed your outstanding balance.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (!description) {
       toast({
         title: 'Select payment type',
@@ -123,7 +114,7 @@ export default function StudentPayments() {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       if (user?.id) {
-        addPayment(user.id, {
+        await addPayment(user.id, {
           amount: paymentAmount,
           date: new Date().toISOString(),
           status: 'pending',
@@ -137,7 +128,7 @@ export default function StudentPayments() {
         addNotification({
           userId: 'admin-1',
           title: 'New Payment Submitted',
-          message: `${user.name} submitted a payment of $${paymentAmount.toLocaleString()} for ${description}.`,
+          message: `${user.name} submitted a payment of ₱${paymentAmount.toLocaleString()} for ${description}.`,
           type: 'info',
           link: '/dashboard/payments',
         });
@@ -148,7 +139,7 @@ export default function StudentPayments() {
 
         toast({
           title: 'Payment submitted!',
-          description: `Your payment of $${paymentAmount.toLocaleString()} is pending admin confirmation.`,
+          description: `Your payment of ₱${paymentAmount.toLocaleString()} is pending admin confirmation.`,
         });
 
         setAmount('');
@@ -180,9 +171,8 @@ export default function StudentPayments() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
               <span className="text-3xl font-bold">
-                ${studentData?.tuitionBalance?.toLocaleString() || 0}
+                ₱{studentData?.tuitionBalance?.toLocaleString() || 0}
               </span>
             </div>
           </CardContent>
@@ -195,7 +185,7 @@ export default function StudentPayments() {
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-success" />
               <span className="text-3xl font-bold">
-                ${studentData?.payments?.filter(p => p.status === 'completed').reduce((sum, p) => {
+                ₱{studentData?.payments?.filter(p => p.status === 'completed').reduce((sum, p) => {
                   if (p.type === 'adjustment') {
                     return p.adjustmentType === 'debit' ? sum - p.amount : sum + p.amount;
                   }
@@ -208,8 +198,7 @@ export default function StudentPayments() {
       </div>
 
       {/* Payment Form */}
-      {(studentData?.tuitionBalance || 0) > 0 && (
-        <Card>
+      <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
@@ -221,12 +210,11 @@ export default function StudentPayments() {
             <form onSubmit={handlePayment} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Amount ($)</Label>
+                  <Label htmlFor="amount">Amount (₱)</Label>
                   <Input
                     id="amount"
                     type="number"
                     min="1"
-                    max={studentData?.tuitionBalance || 0}
                     step="0.01"
                     placeholder="0.00"
                     value={amount}
@@ -273,7 +261,6 @@ export default function StudentPayments() {
             </form>
           </CardContent>
         </Card>
-      )}
 
       {/* Payment History */}
       <Card>
@@ -306,7 +293,7 @@ export default function StudentPayments() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell>${payment.amount.toLocaleString()}</TableCell>
+                      <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
                       <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
                       <TableCell>
 

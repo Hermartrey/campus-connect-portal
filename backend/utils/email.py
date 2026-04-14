@@ -2,7 +2,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
-from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,50 +14,77 @@ def send_verification_email(to_email: str, code: str) -> bool:
     Returns True if successfully sent, False if SMTP is unconfigured or fails.
     """
     smtp_server = os.getenv("SMTP_SERVER")
-    smtp_port = os.getenv("SMTP_PORT")
+    smtp_port_str = os.getenv("SMTP_PORT", "587")
     smtp_username = os.getenv("SMTP_USERNAME")
     smtp_password = os.getenv("SMTP_PASSWORD")
-    from_email = os.getenv("SMTP_FROM_EMAIL", smtp_username or "no-reply@conceptionimmaculate48.com")
+    from_email = os.getenv("SMTP_FROM_EMAIL", smtp_username or "no-reply@campusconnect.com")
 
-    if not all([smtp_server, smtp_port, smtp_username, smtp_password]):
+    if not all([smtp_server, smtp_username, smtp_password]):
+        print("[EMAIL] SMTP not configured — skipping email send.")
         return False
+
+    smtp_port = int(smtp_port_str)
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Verify Your Immaculate Conception High School Account"
-        msg["From"] = f"Immaculate Conception High School <{from_email}>"
+        msg["Subject"] = "Verify Your Campus Connect Account"
+        msg["From"] = f"Campus Connect <{from_email}>"
         msg["To"] = to_email
 
         html_content = f"""
         <html>
-          <body style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eaeaea; border-radius: 8px; padding: 30px;">
-                <h2 style="color: #2563eb; text-align: center;">Welcome to Immaculate Conception High School!</h2>
+          <body style="font-family: Arial, sans-serif; padding: 20px; color: #333; background: #f9fafb;">
+            <div style="max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eaeaea; border-radius: 12px; padding: 40px;">
+                <h2 style="color: #2563eb; text-align: center; margin-bottom: 8px;">Welcome to Campus Connect!</h2>
+                <p style="text-align: center; color: #6b7280; margin-top: 0;">Immaculate Conception High School</p>
+                <hr style="border: none; border-top: 1px solid #eaeaea; margin: 24px 0;" />
                 <p>Hello,</p>
-                <p>Thank you for creating an account with us. To complete your registration, please use the following 6-digit verification code:</p>
+                <p>Thank you for creating an account. Use the verification code below to complete your registration:</p>
                 
-                <div style="text-align: center; margin: 30px 0;">
-                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; background: #f3f4f6; padding: 15px 30px; border-radius: 8px; color: #111;">{code}</span>
+                <div style="text-align: center; margin: 32px 0;">
+                    <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; background: #eff6ff; padding: 16px 32px; border-radius: 10px; color: #1d4ed8; border: 2px dashed #93c5fd;">{code}</span>
                 </div>
                 
-                <p>If you did not request this verification, please disregard this email.</p>
+                <p style="color: #6b7280; font-size: 14px;">This code is valid for your current registration session. If you did not sign up, you can safely ignore this email.</p>
                 <br />
-                <p>Best regards,<br/><strong>Immaculate Conception High School Team</strong></p>
+                <p>Best regards,<br/><strong>Campus Connect Team</strong></p>
             </div>
           </body>
         </html>
         """
         
-        part = MIMEText(html_content, "html")
-        msg.attach(part)
+        text_content = f"Your Campus Connect verification code is: {code}"
+
+        msg.attach(MIMEText(text_content, "plain"))
+        msg.attach(MIMEText(html_content, "html"))
         
-        server = smtplib.SMTP(smtp_server, int(smtp_port))
-        server.ehlo()
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        server.sendmail(from_email, to_email, msg.as_string())
-        server.quit()
+        print(f"[EMAIL] Connecting to {smtp_server}:{smtp_port} as {smtp_username}...")
+
+        if smtp_port == 465:
+            # Use SSL directly
+            import ssl
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context) as server:
+                server.login(smtp_username, smtp_password)
+                server.sendmail(from_email, to_email, msg.as_string())
+        else:
+            # Use STARTTLS (port 587)
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(smtp_username, smtp_password)
+                server.sendmail(from_email, to_email, msg.as_string())
+
+        print(f"[EMAIL] Verification email sent successfully to {to_email}")
         return True
+
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"[EMAIL] Authentication failed — check SMTP_USERNAME and SMTP_PASSWORD / App Password: {e}")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"[EMAIL] SMTP error while sending to {to_email}: {e}")
+        return False
     except Exception as e:
-        print(f"Failed to send email: {str(e)}")
+        print(f"[EMAIL] Unexpected error sending email to {to_email}: {e}")
         return False

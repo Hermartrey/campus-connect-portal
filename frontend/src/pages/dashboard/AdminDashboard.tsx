@@ -87,6 +87,11 @@ export default function AdminDashboard() {
                   <div>
                     <p className="font-medium">{student.name}</p>
                     <p className="text-sm text-muted-foreground">{student.email}</p>
+                    {student.enrollmentStatus === 'approved' && (
+                      <p className="text-xs text-muted-foreground mt-1 font-medium">
+                        Balance: <span className={student.tuitionBalance > 0 ? "text-destructive" : "text-success"}>₱{student.tuitionBalance?.toLocaleString() || 0}</span>
+                      </p>
+                    )}
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${student.enrollmentStatus === 'approved'
                     ? 'bg-success/10 text-success'
