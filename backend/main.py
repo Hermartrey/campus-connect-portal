@@ -1,5 +1,10 @@
-from fastapi import FastAPI
+import os
+from pathlib import Path
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import uvicorn
 
 from routes import auth, students, payments, settings, notifications
@@ -23,9 +28,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Campus Connect Portal API", version="1.0.0", lifespan=lifespan)
 
+# Allow both local dev origins and the Render production URL
+RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "")
+allowed_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:8080",
+]
+if RENDER_URL:
+    allowed_origins.append(RENDER_URL)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,6 +73,25 @@ def _seed_admin(db):
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
+
+
+# ---------- Serve frontend static files in production ----------
+STATIC_DIR = Path(__file__).parent / "static"
+
+if STATIC_DIR.exists():
+    # Serve JS/CSS/images/assets from the Vite build
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(request: Request, full_path: str):
+        """
+        SPA catch-all: serve the file if it exists in the static build,
+        otherwise return index.html so React Router can handle client-side routes.
+        """
+        file_path = STATIC_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(STATIC_DIR / "index.html")
 
 
 def main():

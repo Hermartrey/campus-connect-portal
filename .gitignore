@@ -1,1 +1,7 @@
 node_modules
+backend/static/
+backend/.env
+backend/campus.db
+backend/__pycache__/
+backend/.venv/
+backend/.pytest_cache/
